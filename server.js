@@ -8,10 +8,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Supabase admin client (service key)
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_KEY || ''
-);
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://placeholder.supabase.co';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || 'placeholder-service-key';
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 app.use(cors());
 app.use(express.json());
