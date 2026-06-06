@@ -1,35 +1,28 @@
-// ============================================================
-// Circles — Supabase Client Initialization
-// ============================================================
+// Circles — Supabase Client
+// Fetches config from /api/config then initialises the client once.
 
-let supabase;
+let _supabase = null;
+let _initPromise = null;
 
-async function initSupabaseClient() {
-  if (supabase) return supabase;
+function initSupabaseClient() {
+  if (_supabase) return Promise.resolve(_supabase);
+  if (_initPromise) return _initPromise;
 
-  // Try config injected at build/deploy time
-  if (window.CIRCLES_CONFIG?.supabaseUrl && window.CIRCLES_CONFIG?.supabaseAnonKey) {
-    supabase = window.supabase.createClient(
-      window.CIRCLES_CONFIG.supabaseUrl,
-      window.CIRCLES_CONFIG.supabaseAnonKey
-    );
-    return supabase;
-  }
+  _initPromise = fetch('/api/config')
+    .then(r => r.json())
+    .then(config => {
+      if (!config.supabaseUrl || !config.supabaseAnonKey) {
+        console.warn('Circles: missing Supabase config');
+        return null;
+      }
+      // window.supabase is set by the CDN <script> loaded before this file
+      _supabase = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
+      return _supabase;
+    })
+    .catch(e => {
+      console.warn('Circles: could not load config', e);
+      return null;
+    });
 
-  // Fallback: fetch from /api/config (local dev / server-rendered)
-  try {
-    const res = await fetch('/api/config');
-    const config = await res.json();
-    if (config.supabaseUrl && config.supabaseAnonKey) {
-      supabase = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
-    } else {
-      console.warn('Circles: Supabase config not set. Auth features disabled.');
-      supabase = null;
-    }
-  } catch (e) {
-    console.warn('Circles: Could not fetch /api/config.', e);
-    supabase = null;
-  }
-
-  return supabase;
+  return _initPromise;
 }
