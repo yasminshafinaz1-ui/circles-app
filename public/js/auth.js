@@ -20,7 +20,7 @@ async function getUser() {
   if (!session) return null;
   const sb = await getSupabase();
   const { data: profile } = await sb
-    .from('profiles')
+    .from('users')
     .select('*')
     .eq('id', session.user.id)
     .single();
@@ -36,20 +36,20 @@ async function signUp(name, email, password, age, interests, instagram) {
     email,
     password,
     options: {
-      data: { name, age, interests, instagram_handle: instagram }
+      data: { name, age, interests, instagram: instagram }
     }
   });
   if (error) throw error;
 
   // Update profile with full details (trigger creates the row)
   if (data.user) {
-    await sb.from('profiles').upsert({
+    await sb.from('users').upsert({
       id: data.user.id,
       name,
       email,
       age: age || null,
       interests: interests || [],
-      instagram_handle: instagram || null
+      instagram: instagram || null
     });
   }
 
