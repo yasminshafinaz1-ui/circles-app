@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Events — Circles</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    .page-hero {
+      background: var(--white);
+      border-bottom: 2px solid var(--border);
+      padding: 60px max(20px, calc((100vw - 1200px)/2)) 40px;
+    }
+    .page-hero h1 { margin-bottom: 10px; }
+    .page-hero p { font-size: 1.05rem; margin-bottom: 28px; max-width: 520px; }
+    .main-content { padding: 36px max(20px, calc((100vw - 1200px)/2)); }
+    .results-count { font-size: 0.85rem; font-weight: 700; color: var(--ink-light); margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo"><span class="nav-logo-dot"></span>Circles</a>
+    <div class="nav-links">
+      <a href="/communities.html" class="hide-mobile">Communities</a>
+      <a href="/events.html" class="active">Events</a>
+      <a href="/login.html" id="nav-login" class="hide-mobile">Log In</a>
+      <a href="/dashboard.html" id="nav-dashboard" class="btn btn-secondary btn-sm" style="display:none">My Dashboard</a>
+      <a href="/signup.html" id="nav-cta" class="nav-cta">Sign Up Free</a>
+      <button id="nav-logout" onclick="signOut()" class="btn btn-secondary btn-sm" style="display:none">Log Out</button>
+    </div>
+  </div>
+</nav>
+
+<div class="pt-nav">
+  <!-- Hero -->
+  <div class="page-hero">
+    <h1>What's on this week in KL & PJ</h1>
+    <p>Upcoming events from all circles. RSVP to save your spot.</p>
+    <div class="cat-strip" id="cat-filter">
+      <button class="cat-pill active" data-cat="all">🏠 All</button>
+      <button class="cat-pill active-cat" data-cat="active">🏃 Active & Outdoors</button>
+      <button class="cat-pill creative-cat" data-cat="creative">🎨 Creative</button>
+      <button class="cat-pill career-cat" data-cat="career">🚀 Career & Hustle</button>
+      <button class="cat-pill wellness-cat" data-cat="wellness">🌸 Wellness</button>
+      <button class="cat-pill social-cat" data-cat="social">💛 Social & Friendship</button>
+    </div>
+  </div>
+
+  <!-- Events List -->
+  <div class="main-content">
+    <div class="results-count" id="results-count"></div>
+    <div class="flex-col" id="events-list">
+      <div class="spinner"></div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/supabase-client.js"></script>
+<script src="/js/app.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+  let allEvents = [];
+  let activeCategory = 'all';
+  let userRsvpMap = {};
+
+  async function loadEvents() {
+    try {
+      const data = await api('/api/events');
+      allEvents = data.events || [];
+
+      // Load user's RSVPs
+      const session = await getSession();
+      if (session) {
+        const sb = await initSupabaseClient();
+        if (sb) {
+          const { data: rsvps } = await sb
+            .from('rsvps')
+            .select('event_id, status')
+            .eq('user_id', session.user.id)
+            .neq('status', 'cancelled');
+          (rsvps || []).forEach(r => { userRsvpMap[r.event_id] = r.status; });
+        }
+      }
+
+      renderEvents();
+    } catch (e) {
+      document.getElementById('events-list').innerHTML =
+        '<div class="empty-state"><div class="empty-icon">😕</div><h3>Could not load events</h3><p>Please try again later.</p></div>';
+    }
+  }
+
+  function renderEvents() {
+    let filtered = allEvents;
+    if (activeCategory !== 'all') {
+      filtered = filtered.filter(e => e.communities?.category === activeCategory);
+    }
+
+    const list = document.getElementById('events-list');
+    const count = document.getElementById('results-count');
+    count.textContent = `${filtered.length} upcoming event${filtered.length === 1 ? '' : 's'}`;
+
+    if (!filtered.length) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📅</div>
+          <h3>No events in this category</h3>
+          <p>Try a different filter or check back soon.</p>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map(e => renderEventRow(e, userRsvpMap)).join('');
+  }
+
+  // Category filter
+  document.getElementById('cat-filter').addEventListener('click', (e) => {
+    const pill = e.target.closest('.cat-pill');
+    if (!pill) return;
+    document.querySelectorAll('#cat-filter .cat-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    activeCategory = pill.dataset.cat;
+    renderEvents();
+  });
+
+  // Handle ?category= param
+  const urlParams = new URLSearchParams(window.location.search);
+  const catParam = urlParams.get('category');
+  if (catParam) {
+    activeCategory = catParam;
+    document.querySelectorAll('#cat-filter .cat-pill').forEach(p => {
+      p.classList.toggle('active', p.dataset.cat === catParam);
+    });
+  }
+
+  loadEvents();
+</script>
+</body>
+</html>

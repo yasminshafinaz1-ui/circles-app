@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Circles</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0d0d1a;
+      color: #e0e0f0;
+      font-family: 'Courier New', monospace;
+      padding: 32px;
+      line-height: 1.6;
+    }
+    h1 { color: #fff; font-size: 1.6rem; margin-bottom: 4px; }
+    h2 { color: #a0a0c0; font-size: 1rem; margin: 28px 0 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .brand { color: #ff6b6b; font-size: 1rem; margin-bottom: 32px; }
+    .stat-row { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 8px; }
+    .stat-box {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4e;
+      border-radius: 12px;
+      padding: 16px 24px;
+      min-width: 160px;
+    }
+    .stat-box .val { font-size: 2rem; font-weight: bold; color: #00c9a7; }
+    .stat-box .lbl { font-size: 0.75rem; color: #6060a0; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th { padding: 8px 16px; text-align: left; background: #1a1a2e; color: #6060a0; font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid #2a2a4e; }
+    td { padding: 8px 16px; border-bottom: 1px solid #1a1a2e; font-size: 0.88rem; }
+    tr:hover td { background: #1a1a2e; }
+    .error { color: #ff6b6b; padding: 20px; }
+    .north-star-box {
+      background: linear-gradient(135deg, #1a1a2e, #2a1a3e);
+      border: 2px solid #845ec2;
+      border-radius: 16px;
+      padding: 24px 32px;
+      margin: 16px 0 28px;
+      display: inline-block;
+    }
+    .north-star-box .val { font-size: 3.5rem; font-weight: bold; color: #c8f7c5; }
+    .north-star-box .lbl { font-size: 0.82rem; color: #a0a0c0; margin-top: 4px; }
+    .auth-form { margin-bottom: 32px; }
+    .auth-form input {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4e;
+      color: #e0e0f0;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      width: 280px;
+      margin-right: 8px;
+    }
+    .auth-form button {
+      background: #845ec2;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+<h1>⚙ Circles Admin</h1>
+<div class="brand">circles.my — internal metrics</div>
+
+<div id="auth-section" class="auth-form">
+  <input type="password" id="admin-key-input" placeholder="Enter admin key…" />
+  <button onclick="loadStats()">Access →</button>
+</div>
+
+<div id="stats-content"></div>
+
+<script>
+  // Check URL param
+  const urlParams = new URLSearchParams(window.location.search);
+  const keyFromUrl = urlParams.get('key');
+  if (keyFromUrl) {
+    document.getElementById('admin-key-input').value = keyFromUrl;
+    loadStats();
+  }
+
+  async function loadStats() {
+    const key = document.getElementById('admin-key-input').value.trim();
+    if (!key) { alert('Enter the admin key'); return; }
+
+    document.getElementById('stats-content').innerHTML = '<p style="color:#6060a0">Loading…</p>';
+
+    try {
+      const res = await fetch(`/api/admin/stats?key=${encodeURIComponent(key)}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        document.getElementById('stats-content').innerHTML = `<div class="error">❌ ${data.error || 'Access denied'}</div>`;
+        return;
+      }
+
+      document.getElementById('auth-section').style.display = 'none';
+
+      const weeklyRows = (data.weekly_new_joiners || []).map(w =>
+        `<tr><td>${w.week_start}</td><td style="color:#00c9a7">${w.new_joiners}</td></tr>`
+      ).join('');
+
+      document.getElementById('stats-content').innerHTML = `
+        <h2>⭐ North Star Metric</h2>
+        <p style="color:#6060a0;margin-bottom:12px">New people who joined at least 1 community this week</p>
+        <div class="north-star-box">
+          <div class="val">${data.north_star}</div>
+          <div class="lbl">new community joiners this week</div>
+        </div>
+
+        <h2>📊 Platform Totals</h2>
+        <div class="stat-row">
+          <div class="stat-box"><div class="val">${data.total_active_users}</div><div class="lbl">Active Users</div></div>
+          <div class="stat-box"><div class="val">${data.total_communities}</div><div class="lbl">Communities</div></div>
+          <div class="stat-box"><div class="val">${data.total_events}</div><div class="lbl">Events</div></div>
+          <div class="stat-box"><div class="val">${data.total_rsvps}</div><div class="lbl">RSVPs</div></div>
+        </div>
+
+        <h2>📅 Weekly New Community Joiners (last 8 weeks)</h2>
+        <table>
+          <thead><tr><th>Week Starting</th><th>New Joiners</th></tr></thead>
+          <tbody>${weeklyRows}</tbody>
+        </table>
+      `;
+    } catch (e) {
+      document.getElementById('stats-content').innerHTML = `<div class="error">❌ Error: ${e.message}</div>`;
+    }
+  }
+
+  // Allow Enter key
+  document.getElementById('admin-key-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') loadStats();
+  });
+</script>
+</body>
+</html>

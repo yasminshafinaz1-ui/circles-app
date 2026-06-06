@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Dashboard — Circles</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    .dash-content {
+      padding: 40px max(20px, calc((100vw - 1200px)/2));
+      max-width: 1200px;
+      margin: 0 auto;
+      padding-left: max(20px, calc((100vw - 1200px)/2));
+      padding-right: max(20px, calc((100vw - 1200px)/2));
+    }
+    .joined-community-card {
+      background: var(--white);
+      border-radius: 20px;
+      border: 2px solid var(--border);
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .jc-emoji {
+      font-size: 2rem;
+      width: 52px; height: 52px;
+      background: var(--offwhite);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .jc-info { flex: 1; min-width: 0; }
+    .jc-info h4 { font-size: 0.95rem; margin-bottom: 4px; }
+    .jc-info p { font-size: 0.8rem; }
+    .leave-btn {
+      font-size: 0.78rem;
+      color: var(--ink-light);
+      background: none;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-pill);
+      padding: 5px 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition);
+      flex-shrink: 0;
+    }
+    .leave-btn:hover { border-color: var(--active); color: var(--active); }
+
+    .rsvp-card {
+      background: var(--white);
+      border-radius: 20px;
+      border: 2px solid var(--border);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .rsvp-card .e-date-box { flex-shrink: 0; }
+    .rsvp-card-info { flex: 1; min-width: 0; }
+    .rsvp-card-info h4 { font-size: 0.95rem; margin-bottom: 4px; }
+    .rsvp-card-info p { font-size: 0.8rem; }
+    .rsvp-status {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      background: var(--mint);
+      color: var(--ink);
+      white-space: nowrap;
+    }
+    .rsvp-status.waitlist { background: var(--yellow); }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo"><span class="nav-logo-dot"></span>Circles</a>
+    <div class="nav-links">
+      <a href="/communities.html" class="hide-mobile">Communities</a>
+      <a href="/events.html" class="hide-mobile">Events</a>
+      <a href="/dashboard.html" class="active hide-mobile">Dashboard</a>
+      <button onclick="signOut()" class="btn btn-secondary btn-sm">Log Out</button>
+    </div>
+  </div>
+</nav>
+
+<div class="pt-nav" id="page-content">
+  <div style="text-align:center;padding:60px"><div class="spinner"></div></div>
+</div>
+
+<script src="/js/supabase-client.js"></script>
+<script src="/js/app.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+  async function loadDashboard() {
+    const session = await requireAuth('/login.html');
+    if (!session) return;
+
+    try {
+      const data = await api('/api/dashboard');
+      renderDashboard(data);
+    } catch (e) {
+      document.getElementById('page-content').innerHTML =
+        `<div class="empty-state"><h3>Could not load dashboard</h3><p>${e.message}</p></div>`;
+    }
+  }
+
+  function renderDashboard({ profile, communities, upcoming_rsvps, past_events }) {
+    const name = profile?.name || 'friend';
+
+    const communitiesHtml = communities.length
+      ? communities.map(c => `
+          <div class="joined-community-card">
+            <div class="jc-emoji">${c.cover_emoji || '🌟'}</div>
+            <div class="jc-info">
+              <h4>${c.name}</h4>
+              <p>${getCategoryLabel(c.category)}</p>
+            </div>
+            <a href="/community.html?id=${c.id}" class="leave-btn">View →</a>
+          </div>`).join('')
+      : `<div class="empty-state">
+           <div class="empty-icon">🔍</div>
+           <h3>No communities yet</h3>
+           <p>Find a circle that fits you.</p>
+           <a href="/communities.html" class="btn btn-primary">Browse Communities →</a>
+         </div>`;
+
+    const upcomingHtml = upcoming_rsvps.length
+      ? upcoming_rsvps.map(r => {
+          const ev = r.events;
+          if (!ev) return '';
+          const { day, mon } = formatDateShort(ev.date);
+          return `
+            <div class="rsvp-card">
+              <div class="e-date-box">
+                <div class="e-date-day">${day}</div>
+                <div class="e-date-mon">${mon}</div>
+              </div>
+              <div class="rsvp-card-info">
+                <h4>${ev.title}</h4>
+                <p>${ev.communities?.cover_emoji || ''} ${ev.communities?.name || ''} · ${formatTime(ev.time_start)} · ${ev.location || ''}</p>
+              </div>
+              <span class="rsvp-status ${r.status === 'waitlist' ? 'waitlist' : ''}">${r.status === 'waitlist' ? 'Waitlisted' : 'Going ✓'}</span>
+              <button class="leave-btn" onclick="cancelRsvp('${ev.id}', this)">Cancel</button>
+            </div>`; }).join('')
+      : `<div class="empty-state">
+           <div class="empty-icon">📅</div>
+           <h3>No upcoming RSVPs</h3>
+           <p>Browse events and RSVP to save your spot.</p>
+           <a href="/events.html" class="btn btn-primary">Browse Events →</a>
+         </div>`;
+
+    const pastHtml = past_events.length
+      ? past_events.map(r => {
+          const ev = r.events;
+          if (!ev) return '';
+          const { day, mon } = formatDateShort(ev.date);
+          return `
+            <div class="rsvp-card">
+              <div class="e-date-box" style="opacity:0.5">
+                <div class="e-date-day">${day}</div>
+                <div class="e-date-mon">${mon}</div>
+              </div>
+              <div class="rsvp-card-info">
+                <h4>${ev.title}</h4>
+                <p>${ev.communities?.cover_emoji || ''} ${ev.communities?.name || ''} · ${ev.location || ''}</p>
+              </div>
+              <span style="font-size:0.75rem;color:var(--ink-light);font-weight:700">Attended</span>
+            </div>`; }).join('')
+      : `<div class="empty-state">
+           <div class="empty-icon">🎉</div>
+           <h3>No past events yet</h3>
+           <p>Your event history will appear here.</p>
+         </div>`;
+
+    document.getElementById('page-content').innerHTML = `
+      <div class="dash-hero">
+        <h1>Hey ${name} 👋</h1>
+        <p>Welcome back to your circles.</p>
+      </div>
+      <div class="dash-content">
+        <div class="dash-section">
+          <h3>My Communities (${communities.length})</h3>
+          <div class="flex-col">${communitiesHtml}</div>
+        </div>
+        <div class="dash-section">
+          <h3>Upcoming Events (${upcoming_rsvps.length})</h3>
+          <div class="flex-col">${upcomingHtml}</div>
+        </div>
+        <div class="dash-section">
+          <h3>Past Events</h3>
+          <div class="flex-col">${pastHtml}</div>
+        </div>
+      </div>`;
+  }
+
+  async function cancelRsvp(eventId, btn) {
+    btn.disabled = true;
+    btn.textContent = '…';
+    try {
+      await api(`/api/events/${eventId}/rsvp`, { method: 'DELETE' });
+      showToast('RSVP cancelled.', 'info');
+      setTimeout(() => loadDashboard(), 800);
+    } catch (e) {
+      showToast(e.message, 'error');
+      btn.disabled = false;
+      btn.textContent = 'Cancel';
+    }
+  }
+
+  loadDashboard();
+</script>
+</body>
+</html>
