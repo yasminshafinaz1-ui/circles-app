@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Circles — Find Your People in KL & PJ</title>
+  <meta name="description" content="Circles helps you find vetted, welcoming communities in Kuala Lumpur and Petaling Jaya. Join a circle, make real friends, and actually show up." />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* ── Landing-specific styles ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 120px max(20px, calc((100vw - 1200px)/2)) 80px;
+      position: relative;
+      overflow: hidden;
+      background: var(--offwhite);
+    }
+    .hero-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.35;
+      pointer-events: none;
+    }
+    .blob-1 { width: 500px; height: 500px; background: var(--lavender); top: -100px; right: -100px; animation: blobFloat 8s ease-in-out infinite; }
+    .blob-2 { width: 350px; height: 350px; background: var(--peach); bottom: 0; left: -80px; animation: blobFloat 10s ease-in-out infinite reverse; }
+    .blob-3 { width: 280px; height: 280px; background: var(--mint); top: 40%; right: 25%; animation: blobFloat 12s ease-in-out infinite 2s; }
+    @keyframes blobFloat {
+      0%, 100% { transform: translate(0,0) scale(1); }
+      33% { transform: translate(16px,-20px) scale(1.03); }
+      66% { transform: translate(-12px,14px) scale(0.97); }
+    }
+    .hero-content { position: relative; z-index: 1; max-width: 680px; }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--white);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-pill);
+      padding: 6px 16px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--ink-light);
+      margin-bottom: 24px;
+    }
+    .hero-badge span { width: 6px; height: 6px; border-radius: 50%; background: var(--wellness); display: block; }
+    .hero h1 { margin-bottom: 22px; }
+    .hero h1 em { font-style: italic; color: var(--active); }
+    .hero-sub { font-size: 1.15rem; line-height: 1.6; color: var(--ink-light); margin-bottom: 36px; max-width: 520px; }
+    .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 44px; }
+    .hero-proof {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .proof-avatars { display: flex; }
+    .proof-avatars span {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 2.5px solid var(--white);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      background: var(--lavender);
+      margin-left: -10px;
+    }
+    .proof-avatars span:first-child { margin-left: 0; }
+    .proof-avatars span:nth-child(2) { background: var(--peach); }
+    .proof-avatars span:nth-child(3) { background: var(--mint); }
+    .proof-avatars span:nth-child(4) { background: var(--yellow); }
+    .proof-text { font-size: 0.85rem; font-weight: 700; color: var(--ink-light); }
+    .proof-text strong { color: var(--ink); }
+
+    .floating-pills {
+      position: absolute;
+      right: max(20px, calc((100vw - 1200px)/2));
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 1;
+    }
+    .f-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--white);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-pill);
+      padding: 10px 18px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      box-shadow: var(--shadow-sm);
+      animation: pillFloat 4s ease-in-out infinite;
+      white-space: nowrap;
+    }
+    .f-pill:nth-child(2) { animation-delay: 0.8s; }
+    .f-pill:nth-child(3) { animation-delay: 1.6s; }
+    .f-pill:nth-child(4) { animation-delay: 2.4s; }
+    .f-pill:nth-child(5) { animation-delay: 3.2s; }
+    @keyframes pillFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    .f-pill-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* Category strip */
+    .cat-section {
+      padding: 24px max(20px, calc((100vw - 1200px)/2));
+      background: var(--white);
+      border-top: 2px solid var(--border);
+      border-bottom: 2px solid var(--border);
+      overflow-x: auto;
+    }
+    .cat-section .cat-strip { flex-wrap: nowrap; }
+
+    /* Section headings */
+    .section-eyebrow {
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--ink-light);
+      margin-bottom: 8px;
+    }
+
+    /* How it works */
+    .how-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+    }
+    .how-step {
+      text-align: center;
+      padding: 32px 20px;
+      background: var(--white);
+      border-radius: var(--radius-card);
+      border: 2px solid var(--border);
+    }
+    .how-step-num {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: var(--ink);
+      color: var(--white);
+      font-family: 'Fraunces', serif;
+      font-weight: 900;
+      font-size: 1.1rem;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+    }
+    .how-step h4 { margin-bottom: 8px; font-size: 1rem; }
+    .how-step p { font-size: 0.85rem; }
+
+    /* Organiser section */
+    .org-section {
+      background: var(--ink);
+      padding: 80px max(20px, calc((100vw - 1200px)/2));
+      color: var(--white);
+    }
+    .org-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+    .org-section h2 { color: var(--white); }
+    .org-section p { color: rgba(255,255,255,0.7); }
+    .org-benefits { margin: 28px 0; display: flex; flex-direction: column; gap: 14px; }
+    .org-benefit {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 0.95rem;
+      color: rgba(255,255,255,0.85);
+      font-weight: 600;
+    }
+    .org-benefit-icon {
+      width: 32px; height: 32px; border-radius: 10px;
+      background: rgba(255,255,255,0.1);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 1rem;
+    }
+    .org-mockup {
+      background: rgba(255,255,255,0.06);
+      border: 2px solid rgba(255,255,255,0.12);
+      border-radius: var(--radius-card);
+      padding: 28px;
+    }
+    .org-mockup-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .org-mockup-head h4 { color: var(--white); font-size: 1rem; }
+    .org-stat-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+    .org-stat {
+      background: rgba(255,255,255,0.06);
+      border-radius: 16px;
+      padding: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .org-stat-val { font-family: 'Fraunces', serif; font-weight: 900; font-size: 1.6rem; color: var(--white); }
+    .org-stat-lbl { font-size: 0.75rem; color: rgba(255,255,255,0.55); font-weight: 600; margin-top: 4px; }
+    .org-event-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .org-event-row:last-child { border-bottom: none; }
+    .org-event-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--wellness); }
+    .org-event-info { flex: 1; }
+    .org-event-title { font-size: 0.88rem; font-weight: 700; color: var(--white); }
+    .org-event-meta { font-size: 0.75rem; color: rgba(255,255,255,0.5); font-weight: 600; }
+
+    /* Testimonials */
+    .testimonials-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .testimonial-card {
+      background: var(--white);
+      border-radius: var(--radius-card);
+      border: 2px solid var(--border);
+      padding: 28px;
+    }
+    .t-stars { color: var(--yellow); font-size: 1rem; margin-bottom: 14px; }
+    .t-quote { font-size: 0.92rem; color: var(--ink); font-weight: 600; line-height: 1.6; margin-bottom: 18px; }
+    .t-author { display: flex; align-items: center; gap: 10px; }
+    .t-avatar {
+      width: 38px; height: 38px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; background: var(--lavender);
+    }
+    .t-name { font-size: 0.85rem; font-weight: 800; color: var(--ink); }
+    .t-handle { font-size: 0.75rem; color: var(--ink-light); font-weight: 600; }
+
+    /* CTA band */
+    .cta-band {
+      background: var(--active);
+      padding: 64px max(20px, calc((100vw - 1200px)/2));
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-band h2 { color: var(--white); margin-bottom: 10px; }
+    .cta-band p { color: rgba(255,255,255,0.85); font-size: 1.1rem; margin-bottom: 32px; }
+    .cta-band .btn-white {
+      background: var(--white);
+      color: var(--active);
+      font-size: 1rem;
+    }
+    .cta-band .btn-white:hover { background: var(--offwhite); }
+
+    /* Scroll reveal */
+    [data-reveal] { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    [data-reveal].revealed { opacity: 1; transform: translateY(0); }
+    [data-reveal-delay="1"] { transition-delay: 0.1s; }
+    [data-reveal-delay="2"] { transition-delay: 0.2s; }
+    [data-reveal-delay="3"] { transition-delay: 0.3s; }
+    [data-reveal-delay="4"] { transition-delay: 0.4s; }
+
+    @media (max-width: 900px) {
+      .how-grid { grid-template-columns: repeat(2, 1fr); }
+      .org-inner { grid-template-columns: 1fr; }
+      .floating-pills { display: none; }
+      .testimonials-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .hero { padding-top: 100px; padding-bottom: 60px; }
+      .hero h1 { font-size: 2.1rem; }
+      .how-grid { grid-template-columns: 1fr; }
+      .testimonials-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Nav ──────────────────────────────────────────────────── -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">
+      <span class="nav-logo-dot"></span>
+      Circles
+    </a>
+    <div class="nav-links">
+      <a href="/communities.html" class="hide-mobile">Communities</a>
+      <a href="/events.html" class="hide-mobile">Events</a>
+      <a href="/login.html" id="nav-login" class="hide-mobile">Log In</a>
+      <a href="/dashboard.html" id="nav-dashboard" class="btn btn-secondary btn-sm" style="display:none">My Dashboard</a>
+      <a href="/signup.html" id="nav-cta" class="nav-cta">Sign Up Free</a>
+      <button id="nav-logout" onclick="signOut()" class="btn btn-secondary btn-sm" style="display:none">Log Out</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Hero ─────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-blob blob-1"></div>
+  <div class="hero-blob blob-2"></div>
+  <div class="hero-blob blob-3"></div>
+
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span></span>
+      KL & PJ · Vetted communities only
+    </div>
+    <h1>Find people you <em>actually</em> click with in KL</h1>
+    <p class="hero-sub">Circles connects you with real, active communities — hiking crews, art clubs, career networks, wellness circles, and more. No spam. No randoms. Just genuine people.</p>
+    <div class="hero-actions">
+      <a href="/signup.html" class="btn btn-primary btn-lg">Join Free →</a>
+      <a href="/communities.html" class="btn btn-secondary btn-lg">Browse Communities</a>
+    </div>
+    <div class="hero-proof">
+      <div class="proof-avatars">
+        <span>🧕</span><span>👩</span><span>🧑</span><span>👩</span>
+      </div>
+      <div class="proof-text"><strong>1,200+</strong> people found their circle this year</div>
+    </div>
+  </div>
+
+  <div class="floating-pills">
+    <div class="f-pill"><span class="f-pill-dot" style="background:var(--active)"></span>Jom Touch Grass 🌿</div>
+    <div class="f-pill"><span class="f-pill-dot" style="background:var(--creative)"></span>KL Sketch Nation ✏️</div>
+    <div class="f-pill"><span class="f-pill-dot" style="background:var(--social)"></span>Teman Girls KL 💛</div>
+    <div class="f-pill"><span class="f-pill-dot" style="background:var(--career)"></span>Hustle Honeys 🚀</div>
+    <div class="f-pill"><span class="f-pill-dot" style="background:var(--wellness)"></span>The Bloom Society 🌸</div>
+  </div>
+</section>
+
+<!-- ── Category Strip ────────────────────────────────────────── -->
+<div class="cat-section">
+  <div class="cat-strip">
+    <a href="/communities.html" class="cat-pill">🏠 All</a>
+    <a href="/communities.html?category=active" class="cat-pill active-cat">🏃 Active & Outdoors</a>
+    <a href="/communities.html?category=creative" class="cat-pill creative-cat">🎨 Creative</a>
+    <a href="/communities.html?category=career" class="cat-pill career-cat">🚀 Career & Hustle</a>
+    <a href="/communities.html?category=wellness" class="cat-pill wellness-cat">🌸 Wellness</a>
+    <a href="/communities.html?category=social" class="cat-pill social-cat">💛 Social & Friendship</a>
+  </div>
+</div>
+
+<!-- ── Communities Section ───────────────────────────────────── -->
+<section class="section">
+  <div class="section-header" data-reveal>
+    <div class="section-eyebrow">Communities</div>
+    <h2>Circles worth joining</h2>
+    <p>Every community on Circles is personally vetted. Real organiser, active members, and actual meetups.</p>
+  </div>
+  <div class="grid-3" id="communities-grid">
+    <!-- Loaded from API or fallback static -->
+    <div class="card community-card">
+      <div class="c-card-top"><span class="c-card-emoji">💛</span><span class="c-card-cat social">Social & Friendship</span></div>
+      <div class="c-card-body"><h3>Teman Girls KL</h3><p>A warm, judgment-free community for women navigating life in KL.</p></div>
+      <div class="c-card-meta"><span class="c-card-who">Women only · 20–35</span><span class="c-card-members">👥 348</span></div>
+      <div class="c-card-footer"><a href="/communities.html" class="btn btn-primary">Join →</a></div>
+    </div>
+    <div class="card community-card">
+      <div class="c-card-top"><span class="c-card-emoji">🌿</span><span class="c-card-cat active">Active & Outdoors</span></div>
+      <div class="c-card-body"><h3>Jom Touch Grass</h3><p>Weekend hikers, trail runners, and anyone who wants to get off their sofa.</p></div>
+      <div class="c-card-meta"><span class="c-card-who">All genders · 18–40</span><span class="c-card-members">👥 215</span></div>
+      <div class="c-card-footer"><a href="/communities.html" class="btn btn-primary">Join →</a></div>
+    </div>
+    <div class="card community-card">
+      <div class="c-card-top"><span class="c-card-emoji">✏️</span><span class="c-card-cat creative">Creative</span></div>
+      <div class="c-card-body"><h3>KL Sketch Nation</h3><p>Urban sketchers and visual storytellers meeting weekly at KL spots.</p></div>
+      <div class="c-card-meta"><span class="c-card-who">All genders · 18–45</span><span class="c-card-members">👥 189</span></div>
+      <div class="c-card-footer"><a href="/communities.html" class="btn btn-primary">Join →</a></div>
+    </div>
+    <div class="card community-card">
+      <div class="c-card-top"><span class="c-card-emoji">🚀</span><span class="c-card-cat career">Career & Hustle</span></div>
+      <div class="c-card-body"><h3>Hustle Honeys</h3><p>Female founders sharing resources, referrals, and real talk about building in Malaysia.</p></div>
+      <div class="c-card-meta"><span class="c-card-who">Women only · 22–38</span><span class="c-card-members">👥 274</span></div>
+      <div class="c-card-footer"><a href="/communities.html" class="btn btn-primary">Join →</a></div>
+    </div>
+    <div class="card community-card">
+      <div class="c-card-top"><span class="c-card-emoji">🌸</span><span class="c-card-cat wellness">Wellness</span></div>
+      <div class="c-card-body"><h3>The Bloom Society</h3><p>Holistic wellness for the modern Malaysian woman — yoga, sound healing, journaling.</p></div>
+      <div class="c-card-meta"><span class="c-card-who">Women only · 21–40</span><span class="c-card-members">👥 156</span></div>
+      <div class="c-card-footer"><a href="/communities.html" class="btn btn-primary">Join →</a></div>
+    </div>
+    <div class="card community-card">
+      <div class="c-card-top"><span class="c-card-emoji">🧺</span><span class="c-card-cat social">Social & Friendship</span></div>
+      <div class="c-card-body"><h3>cakepiknik</h3><p>Spontaneous picnics, potluck gatherings, and slow afternoons in the park.</p></div>
+      <div class="c-card-meta"><span class="c-card-who">All genders · 18–35</span><span class="c-card-members">👥 122</span></div>
+      <div class="c-card-footer"><a href="/communities.html" class="btn btn-primary">Join →</a></div>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:36px" data-reveal>
+    <a href="/communities.html" class="btn btn-secondary btn-lg">See All Communities →</a>
+  </div>
+</section>
+
+<!-- ── Events Section ────────────────────────────────────────── -->
+<section class="section" style="background:var(--white);border-top:2px solid var(--border);border-bottom:2px solid var(--border)">
+  <div class="section-header" data-reveal>
+    <div class="section-eyebrow">Events</div>
+    <h2>What's on this week</h2>
+    <p>All events are run by circle organisers. Every RSVP counts.</p>
+  </div>
+  <div class="flex-col" id="events-list">
+    <div class="e-row">
+      <div class="e-date-box"><div class="e-date-day">14</div><div class="e-date-mon">JUN</div></div>
+      <div class="e-info"><h4>Pottery Workshop: Make Your Own Mug</h4><div class="e-meta">✏️ KL Sketch Nation · 2:00 PM · Studio Clay, Bangsar · 8/16 going</div></div>
+      <span class="e-price">RM 65</span>
+      <div class="e-rsvp-btn"><a href="/events.html" class="btn btn-sm btn-primary">RSVP</a></div>
+    </div>
+    <div class="e-row">
+      <div class="e-date-box"><div class="e-date-day">09</div><div class="e-date-mon">JUN</div></div>
+      <div class="e-info"><h4>Sunday Trail Run — Bukit Kiara</h4><div class="e-meta">🌿 Jom Touch Grass · 7:00 AM · Bukit Kiara, TTDI · 18/30 going</div></div>
+      <span class="e-price free">FREE</span>
+      <div class="e-rsvp-btn"><a href="/events.html" class="btn btn-sm btn-primary">RSVP</a></div>
+    </div>
+    <div class="e-row">
+      <div class="e-date-box"><div class="e-date-day">13</div><div class="e-date-mon">JUN</div></div>
+      <div class="e-info"><h4>Urban Sketch Session: Masjid India</h4><div class="e-meta">✏️ KL Sketch Nation · 9:00 AM · Masjid India, KL · 9/20 going</div></div>
+      <span class="e-price free">FREE</span>
+      <div class="e-rsvp-btn"><a href="/events.html" class="btn btn-sm btn-primary">RSVP</a></div>
+    </div>
+    <div class="e-row">
+      <div class="e-date-box"><div class="e-date-day">16</div><div class="e-date-mon">JUN</div></div>
+      <div class="e-info"><h4>Hustle Honeys Monthly Mixer</h4><div class="e-meta">🚀 Hustle Honeys · 7:00 PM · WORQ, Damansara, PJ · 32/50 going</div></div>
+      <span class="e-price">RM 25</span>
+      <div class="e-rsvp-btn"><a href="/events.html" class="btn btn-sm btn-primary">RSVP</a></div>
+    </div>
+    <div class="e-row">
+      <div class="e-date-box"><div class="e-date-day">20</div><div class="e-date-mon">JUN</div></div>
+      <div class="e-info"><h4>Sound Bath + Journaling Circle</h4><div class="e-meta">🌸 The Bloom Society · 7:30 PM · The Hive Wellness, PJ · 11/20 going</div></div>
+      <span class="e-price">RM 45</span>
+      <div class="e-rsvp-btn"><a href="/events.html" class="btn btn-sm btn-primary">RSVP</a></div>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:32px" data-reveal>
+    <a href="/events.html" class="btn btn-secondary btn-lg">See All Events →</a>
+  </div>
+</section>
+
+<!-- ── How It Works ──────────────────────────────────────────── -->
+<section class="section">
+  <div class="section-header" data-reveal style="text-align:center">
+    <div class="section-eyebrow">How it works</div>
+    <h2>From stranger to circle in 4 steps</h2>
+  </div>
+  <div class="how-grid">
+    <div class="how-step" data-reveal data-reveal-delay="1">
+      <div class="how-step-num">1</div>
+      <h4>Sign up</h4>
+      <p>Create your free account and tell us what you're into. Takes 2 minutes.</p>
+    </div>
+    <div class="how-step" data-reveal data-reveal-delay="2">
+      <div class="how-step-num">2</div>
+      <h4>Discover communities</h4>
+      <p>Browse vetted circles filtered by category, vibe, and who they're for.</p>
+    </div>
+    <div class="how-step" data-reveal data-reveal-delay="3">
+      <div class="how-step-num">3</div>
+      <h4>Join & connect</h4>
+      <p>Hit join to get into the WhatsApp group and start meeting people.</p>
+    </div>
+    <div class="how-step" data-reveal data-reveal-delay="4">
+      <div class="how-step-num">4</div>
+      <h4>Show up IRL</h4>
+      <p>RSVP to events, attend meetups, and build friendships that last.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── Organiser Section ─────────────────────────────────────── -->
+<section class="org-section">
+  <div class="org-inner">
+    <div data-reveal>
+      <div class="section-eyebrow" style="color:rgba(255,255,255,0.5)">For Organisers</div>
+      <h2>Grow your community with Circles</h2>
+      <p style="margin-top:12px">We help vetted organisers reach new members, manage events, and track engagement — all in one place.</p>
+      <div class="org-benefits">
+        <div class="org-benefit">
+          <div class="org-benefit-icon">📣</div>
+          <div>Reach hundreds of people actively looking for your community type</div>
+        </div>
+        <div class="org-benefit">
+          <div class="org-benefit-icon">📊</div>
+          <div>Track member growth, event engagement, and community health</div>
+        </div>
+        <div class="org-benefit">
+          <div class="org-benefit-icon">🎫</div>
+          <div>Manage RSVPs, waitlists, and attendee lists effortlessly</div>
+        </div>
+      </div>
+      <a href="mailto:hello@circlesmy.com" class="btn" style="background:var(--active);color:var(--white)">Apply as Organiser →</a>
+    </div>
+    <div data-reveal data-reveal-delay="2">
+      <div class="org-mockup">
+        <div class="org-mockup-head">
+          <h4>Organiser Dashboard</h4>
+          <span style="font-size:0.75rem;color:rgba(255,255,255,0.5);font-weight:600">This month</span>
+        </div>
+        <div class="org-stat-row">
+          <div class="org-stat"><div class="org-stat-val">348</div><div class="org-stat-lbl">Total Members</div></div>
+          <div class="org-stat"><div class="org-stat-val">+42</div><div class="org-stat-lbl">New via Circles</div></div>
+          <div class="org-stat"><div class="org-stat-val">5</div><div class="org-stat-lbl">Events this month</div></div>
+          <div class="org-stat"><div class="org-stat-val">94%</div><div class="org-stat-lbl">RSVP show rate</div></div>
+        </div>
+        <div class="org-event-row">
+          <div class="org-event-dot"></div>
+          <div class="org-event-info">
+            <div class="org-event-title">Sunday Trail Run</div>
+            <div class="org-event-meta">9 Jun · 18/30 RSVPs</div>
+          </div>
+        </div>
+        <div class="org-event-row">
+          <div class="org-event-dot" style="background:var(--yellow)"></div>
+          <div class="org-event-info">
+            <div class="org-event-title">Urban Sketch Session</div>
+            <div class="org-event-meta">13 Jun · 9/20 RSVPs</div>
+          </div>
+        </div>
+        <div class="org-event-row">
+          <div class="org-event-dot" style="background:var(--active)"></div>
+          <div class="org-event-info">
+            <div class="org-event-title">Pottery Workshop</div>
+            <div class="org-event-meta">14 Jun · 8/16 RSVPs</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Testimonials ──────────────────────────────────────────── -->
+<section class="section">
+  <div class="section-header" data-reveal style="text-align:center">
+    <div class="section-eyebrow">Testimonials</div>
+    <h2>From real circles members</h2>
+  </div>
+  <div class="testimonials-grid">
+    <div class="testimonial-card" data-reveal data-reveal-delay="1">
+      <div class="t-stars">★★★★★</div>
+      <p class="t-quote">"I moved to KL from Penang and honestly thought I'd never find my people. Joined Teman Girls KL on a Tuesday, went to a brunch on Saturday. These are now my closest friends."</p>
+      <div class="t-author">
+        <div class="t-avatar">🧕</div>
+        <div><div class="t-name">Aisha R.</div><div class="t-handle">Taman Desa, KL</div></div>
+      </div>
+    </div>
+    <div class="testimonial-card" data-reveal data-reveal-delay="2">
+      <div class="t-stars">★★★★★</div>
+      <p class="t-quote">"I'm an introvert. But something about knowing the community is vetted made me feel safe enough to show up. Now I do a trail run every Sunday. My therapist is thrilled."</p>
+      <div class="t-author">
+        <div class="t-avatar" style="background:var(--mint)">🧑</div>
+        <div><div class="t-name">Marcus T.</div><div class="t-handle">Petaling Jaya</div></div>
+      </div>
+    </div>
+    <div class="testimonial-card" data-reveal data-reveal-delay="3">
+      <div class="t-stars">★★★★★</div>
+      <p class="t-quote">"Hustle Honeys helped me find a co-founder AND my first 3 clients. The network is real. Circles is the best thing that happened to my business this year."</p>
+      <div class="t-author">
+        <div class="t-avatar" style="background:var(--peach)">👩</div>
+        <div><div class="t-name">Priya K.</div><div class="t-handle">Bangsar, KL</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA Band ───────────────────────────────────────────────── -->
+<section class="cta-band">
+  <h2>Your circle is waiting</h2>
+  <p>2 minutes to sign up. Real people on the other side.</p>
+  <a href="/signup.html" class="btn btn-white btn-lg">Find My Circle →</a>
+</section>
+
+<!-- ── Footer ────────────────────────────────────────────────── -->
+<footer class="footer">
+  <div class="footer-top">
+    <div>
+      <div class="footer-logo"><span class="footer-logo-dot"></span>Circles</div>
+      <p>A community discovery platform for KL & PJ. Find your people, show up IRL.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Explore</h4>
+      <ul>
+        <li><a href="/communities.html">Communities</a></li>
+        <li><a href="/events.html">Events</a></li>
+        <li><a href="/signup.html">Sign Up</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Organisers</h4>
+      <ul>
+        <li><a href="mailto:hello@circlesmy.com">Apply to List</a></li>
+        <li><a href="/organiser-dashboard.html">Dashboard</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>About</h4>
+      <ul>
+        <li><a href="mailto:hello@circlesmy.com">Contact</a></li>
+        <li><a href="#">Privacy</a></li>
+        <li><a href="#">Terms</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 Circles. Made in KL 🇲🇾</span>
+    <span>hello@circlesmy.com</span>
+  </div>
+</footer>
+
+<script src="/js/supabase-client.js"></script>
+<script src="/js/app.js"></script>
+<script src="/js/auth.js"></script>
+</body>
+</html>

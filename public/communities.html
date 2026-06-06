@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Communities — Circles</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    .page-hero {
+      background: var(--white);
+      border-bottom: 2px solid var(--border);
+      padding: 60px max(20px, calc((100vw - 1200px)/2)) 40px;
+    }
+    .page-hero h1 { margin-bottom: 10px; }
+    .page-hero p { font-size: 1.05rem; margin-bottom: 28px; max-width: 520px; }
+    .filter-bar {
+      padding: 20px max(20px, calc((100vw - 1200px)/2));
+      background: var(--offwhite);
+      border-bottom: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .search-input {
+      padding: 10px 18px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-pill);
+      font-family: 'Nunito', sans-serif;
+      font-weight: 600;
+      font-size: 0.88rem;
+      color: var(--ink);
+      background: var(--white);
+      outline: none;
+      width: 220px;
+      transition: border-color var(--transition);
+    }
+    .search-input:focus { border-color: var(--ink); }
+    .main-content { padding: 40px max(20px, calc((100vw - 1200px)/2)); }
+    .results-count { font-size: 0.85rem; font-weight: 700; color: var(--ink-light); margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo"><span class="nav-logo-dot"></span>Circles</a>
+    <div class="nav-links">
+      <a href="/communities.html" class="active">Communities</a>
+      <a href="/events.html" class="hide-mobile">Events</a>
+      <a href="/login.html" id="nav-login" class="hide-mobile">Log In</a>
+      <a href="/dashboard.html" id="nav-dashboard" class="btn btn-secondary btn-sm" style="display:none">My Dashboard</a>
+      <a href="/signup.html" id="nav-cta" class="nav-cta">Sign Up Free</a>
+      <button id="nav-logout" onclick="signOut()" class="btn btn-secondary btn-sm" style="display:none">Log Out</button>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div class="pt-nav">
+  <div class="page-hero">
+    <h1>Find your people in KL & PJ</h1>
+    <p>Every community on Circles is personally vetted. Real organisers, active members, and actual meetups.</p>
+    <div class="cat-strip" id="cat-filter">
+      <button class="cat-pill active" data-cat="all">🏠 All</button>
+      <button class="cat-pill active-cat" data-cat="active">🏃 Active & Outdoors</button>
+      <button class="cat-pill creative-cat" data-cat="creative">🎨 Creative</button>
+      <button class="cat-pill career-cat" data-cat="career">🚀 Career & Hustle</button>
+      <button class="cat-pill wellness-cat" data-cat="wellness">🌸 Wellness</button>
+      <button class="cat-pill social-cat" data-cat="social">💛 Social & Friendship</button>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <input type="text" class="search-input" id="search-input" placeholder="Search communities…" />
+    <span class="results-count" id="results-count"></span>
+  </div>
+
+  <!-- Communities Grid -->
+  <div class="main-content">
+    <div class="grid-3" id="communities-grid">
+      <div class="spinner"></div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/supabase-client.js"></script>
+<script src="/js/app.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+  let allCommunities = [];
+  let activeCategory = 'all';
+  let joinedCommunityIds = [];
+
+  async function loadCommunities() {
+    try {
+      const data = await api('/api/communities');
+      allCommunities = data.communities || [];
+
+      // Load user's joined communities
+      const session = await getSession();
+      if (session) {
+        const sb = await initSupabaseClient();
+        if (sb) {
+          const { data: memberships } = await sb
+            .from('community_members')
+            .select('community_id')
+            .eq('user_id', session.user.id);
+          joinedCommunityIds = (memberships || []).map(m => m.community_id);
+        }
+      }
+
+      renderGrid();
+    } catch (e) {
+      document.getElementById('communities-grid').innerHTML =
+        '<div class="empty-state"><div class="empty-icon">😕</div><h3>Could not load communities</h3><p>Please try again later.</p></div>';
+    }
+  }
+
+  function renderGrid() {
+    let filtered = allCommunities;
+
+    if (activeCategory !== 'all') {
+      filtered = filtered.filter(c => c.category === activeCategory);
+    }
+
+    const search = document.getElementById('search-input').value.toLowerCase().trim();
+    if (search) {
+      filtered = filtered.filter(c =>
+        c.name.toLowerCase().includes(search) ||
+        (c.description || '').toLowerCase().includes(search)
+      );
+    }
+
+    const grid = document.getElementById('communities-grid');
+    const count = document.getElementById('results-count');
+    count.textContent = `${filtered.length} communit${filtered.length === 1 ? 'y' : 'ies'}`;
+
+    if (!filtered.length) {
+      grid.innerHTML = `
+        <div class="empty-state" style="grid-column:1/-1">
+          <div class="empty-icon">🔍</div>
+          <h3>No communities found</h3>
+          <p>Try a different category or search term.</p>
+        </div>`;
+      return;
+    }
+
+    grid.innerHTML = filtered.map(c => renderCommunityCard(c, joinedCommunityIds)).join('');
+  }
+
+  // Category filter
+  document.getElementById('cat-filter').addEventListener('click', (e) => {
+    const pill = e.target.closest('.cat-pill');
+    if (!pill) return;
+    document.querySelectorAll('#cat-filter .cat-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    activeCategory = pill.dataset.cat;
+    renderGrid();
+  });
+
+  // Search
+  document.getElementById('search-input').addEventListener('input', renderGrid);
+
+  // Handle ?category= param
+  const urlParams = new URLSearchParams(window.location.search);
+  const catParam = urlParams.get('category');
+  if (catParam) {
+    activeCategory = catParam;
+    document.querySelectorAll('#cat-filter .cat-pill').forEach(p => {
+      p.classList.toggle('active', p.dataset.cat === catParam);
+    });
+  }
+
+  loadCommunities();
+</script>
+</body>
+</html>

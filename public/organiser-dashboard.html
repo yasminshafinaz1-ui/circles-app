@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Organiser Dashboard — Circles</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    .dash-content {
+      padding: 40px max(20px, calc((100vw - 1200px)/2));
+    }
+    .section-title { font-size: 1.2rem; margin-bottom: 16px; margin-top: 40px; }
+    .events-table-wrap { overflow-x: auto; }
+    .attendees-modal-content p { font-size: 0.9rem; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo"><span class="nav-logo-dot"></span>Circles</a>
+    <div class="nav-links">
+      <a href="/communities.html" class="hide-mobile">Communities</a>
+      <a href="/events.html" class="hide-mobile">Events</a>
+      <a href="/organiser-dashboard.html" class="active hide-mobile">Organiser</a>
+      <button onclick="signOut()" class="btn btn-secondary btn-sm">Log Out</button>
+    </div>
+  </div>
+</nav>
+
+<div class="pt-nav" id="page-content">
+  <div style="text-align:center;padding:60px"><div class="spinner"></div></div>
+</div>
+
+<script src="/js/supabase-client.js"></script>
+<script src="/js/app.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+  async function loadOrgDashboard() {
+    const user = await requireOrganiser();
+    if (!user) return;
+
+    try {
+      const data = await api('/api/organiser/dashboard');
+      renderDashboard(data, user);
+    } catch (e) {
+      document.getElementById('page-content').innerHTML =
+        `<div class="empty-state"><h3>Could not load organiser dashboard</h3><p>${e.message}</p></div>`;
+    }
+  }
+
+  function renderDashboard({ communities, events, members }, user) {
+    const totalMembers = communities.reduce((s, c) => s + (c.member_count || 0), 0);
+    const upcomingEvents = events.filter(e => e.date >= new Date().toISOString().split('T')[0]);
+    const totalRsvps = events.reduce((s, e) => s + (e.rsvp_count || 0), 0);
+
+    // Stats
+    const statsHtml = `
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Members</div>
+          <div class="stat-value">${totalMembers}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Upcoming Events</div>
+          <div class="stat-value">${upcomingEvents.length}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total RSVPs</div>
+          <div class="stat-value">${totalRsvps}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Communities</div>
+          <div class="stat-value">${communities.length}</div>
+        </div>
+      </div>`;
+
+    // Events table
+    const eventsHtml = events.length
+      ? `<div class="events-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Event</th>
+                <th>Date</th>
+                <th>RSVPs</th>
+                <th>Capacity</th>
+                <th>Price</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${events.map(e => `
+                <tr>
+                  <td><strong>${e.title}</strong></td>
+                  <td>${formatDate(e.date)}</td>
+                  <td>${e.rsvp_count || 0}</td>
+                  <td>${e.capacity || 'Unlimited'}</td>
+                  <td>${formatPrice(e.price_rm)}</td>
+                  <td>
+                    <button class="btn btn-sm btn-secondary" onclick="viewAttendees('${e.id}', '${e.title.replace(/'/g, "\\'")}')">
+                      View Attendees
+                    </button>
+                  </td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`
+      : `<div class="empty-state"><div class="empty-icon">📅</div><h3>No events yet</h3><p>Contact us to add events to your community.</p></div>`;
+
+    // Members table
+    const membersHtml = members.length
+      ? `<div class="events-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr><th>Name</th><th>Email</th><th>Instagram</th><th>Joined</th></tr>
+            </thead>
+            <tbody>
+              ${members.map(m => `
+                <tr>
+                  <td>${m.profiles?.name || '—'}</td>
+                  <td>${m.profiles?.email || '—'}</td>
+                  <td>${m.profiles?.instagram_handle ? '@' + m.profiles.instagram_handle : '—'}</td>
+                  <td>${m.joined_at ? new Date(m.joined_at).toLocaleDateString('en-MY') : '—'}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`
+      : `<div class="empty-state"><div class="empty-icon">👥</div><h3>No members yet</h3><p>Share your community listing to get members.</p></div>`;
+
+    document.getElementById('page-content').innerHTML = `
+      <div class="dash-hero">
+        <h1>Organiser Dashboard</h1>
+        <p>Manage your communities and events.</p>
+      </div>
+      <div class="dash-content">
+        ${statsHtml}
+        <h3 class="section-title">Your Events</h3>
+        ${eventsHtml}
+        <h3 class="section-title">Community Members</h3>
+        ${membersHtml}
+      </div>`;
+  }
+
+  async function viewAttendees(eventId, eventTitle) {
+    showModal('<div class="spinner"></div>', `Attendees: ${eventTitle}`);
+    try {
+      const { attendees } = await api(`/api/organiser/events/${eventId}/attendees`);
+      const content = attendees.length
+        ? `<p>${attendees.length} attendee${attendees.length === 1 ? '' : 's'}</p>
+           <table class="data-table" style="margin-top:8px">
+             <thead><tr><th>Name</th><th>Email</th><th>Status</th></tr></thead>
+             <tbody>
+               ${attendees.map(a => `
+                 <tr>
+                   <td>${a.profiles?.name || '—'}</td>
+                   <td>${a.profiles?.email || '—'}</td>
+                   <td><span class="badge ${a.status === 'attending' ? 'badge-wellness' : 'badge-active'}">${a.status}</span></td>
+                 </tr>`).join('')}
+             </tbody>
+           </table>`
+        : '<p>No attendees yet.</p>';
+      document.getElementById('modal-content').innerHTML = `<h3 style="margin-bottom:16px">Attendees: ${eventTitle}</h3>${content}`;
+    } catch (e) {
+      document.getElementById('modal-content').innerHTML = `<p style="color:var(--active)">Could not load attendees: ${e.message}</p>`;
+    }
+  }
+
+  loadOrgDashboard();
+</script>
+</body>
+</html>
