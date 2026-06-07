@@ -387,8 +387,8 @@
     <h2>What's on this week</h2>
     <p>All events are run by circle organisers. Every RSVP counts.</p>
   </div>
-  <div class="flex-col" id="events-list">
-    <div style="text-align:center;padding:40px"><div class="spinner"></div></div>
+  <div class="grid-3" id="events-list">
+    <div style="grid-column:1/-1;text-align:center;padding:40px"><div class="spinner"></div></div>
   </div>
   <div style="text-align:center;margin-top:32px" data-reveal>
     <a href="/events.html" class="btn btn-secondary btn-lg">See All Events →</a>
@@ -622,37 +622,13 @@
         grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--ink-light)">No communities yet.</p>';
       }
 
-      // Events — show first 5
-      const events = (evtRes.events || []).slice(0, 5);
+      // Events — show first 6, using shared renderEventRow from app.js
+      const events = (evtRes.events || []).slice(0, 6);
       const list = document.getElementById('events-list');
       if (events.length) {
-        list.innerHTML = events.map(e => {
-          const { day, mon } = formatDateShort(e.date);
-          const price = formatPrice(e.price_rm);
-          const cat = e.communities?.category || '';
-          return `
-            <div class="e-row">
-              <a href="/event.html?id=${e.id}" class="e-date-box" style="text-decoration:none">
-                <div class="e-date-day" style="color:${getCategoryColor(cat)}">${day}</div>
-                <div class="e-date-mon">${mon}</div>
-              </a>
-              <div class="e-info">
-                <a href="/event.html?id=${e.id}" style="text-decoration:none;color:inherit"><h4>${e.title}</h4></a>
-                <div class="e-meta">
-                  <span>${getCategoryEmoji(cat)} ${e.communities?.name || ''}</span>
-                  ${e.time ? `<span>🕐 ${e.time}</span>` : ''}
-                  ${e.location ? `<span>📍 ${e.location}</span>` : ''}
-                  ${e.capacity ? `<span>👥 ${e.rsvp_count || 0}/${e.capacity}</span>` : ''}
-                </div>
-              </div>
-              <span class="e-price ${price === 'FREE' ? 'free' : ''}">${price}</span>
-              <div class="e-rsvp-btn">
-                <a href="/event.html?id=${e.id}" class="btn btn-sm btn-primary">RSVP</a>
-              </div>
-            </div>`;
-        }).join('');
+        list.innerHTML = events.map(e => renderEventRow(e, {})).join('');
       } else {
-        list.innerHTML = '<p style="text-align:center;padding:24px;color:var(--ink-light)">No upcoming events yet.</p>';
+        list.innerHTML = '<p style="grid-column:1/-1;text-align:center;padding:24px;color:var(--ink-light)">No upcoming events yet.</p>';
       }
 
       initScrollReveal();
