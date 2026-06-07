@@ -350,21 +350,38 @@
 
   function showRsvpConfirmation() {
     const e = currentEvent;
+    const communityName = e.communities?.name || 'this community';
+    const dateStr = [formatDate(e.date), e.time, e.location].filter(Boolean).join(' · ');
+    const calLink = makeGCalLink(e);
+    const mapsLink = e.location
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.location)}`
+      : null;
+
     showModal(`
-      <div style="text-align:center;margin-bottom:24px">
-        <div style="font-size:3rem;margin-bottom:12px">🎉</div>
-        <h3 style="font-size:1.4rem;margin-bottom:8px">You're going!</h3>
-        <p style="color:var(--ink-light);font-size:0.95rem">Your spot at <strong>${e.title}</strong> is confirmed.</p>
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:2.8rem;margin-bottom:10px">🙌</div>
+        <h3 style="font-size:1.35rem;margin-bottom:6px">You're going! See you there.</h3>
       </div>
-      <div style="background:var(--offwhite);border-radius:16px;padding:16px;margin-bottom:20px;font-size:0.88rem;font-weight:600">
-        <div style="margin-bottom:6px">📅 ${formatDate(e.date)}</div>
-        ${e.time ? `<div style="margin-bottom:6px">🕐 ${e.time}</div>` : ''}
-        ${e.location ? `<div>📍 ${e.location}</div>` : ''}
+      <div style="background:var(--offwhite);border:2px solid var(--border);border-radius:16px;padding:16px;margin-bottom:18px">
+        <div style="font-weight:800;margin-bottom:6px">${e.title}</div>
+        <div style="font-size:0.85rem;color:var(--ink-light);font-weight:600">${dateStr}</div>
       </div>
-      <a href="/dashboard.html" class="btn btn-primary" style="width:100%;justify-content:center;display:flex">
-        View My Events →
-      </a>
-      <button onclick="hideModal()" class="btn btn-secondary" style="width:100%;margin-top:10px">Close</button>
+      <div style="background:#FFF8E7;border:2px solid #F5C842;border-radius:16px;padding:16px;margin-bottom:20px;font-size:0.88rem;line-height:1.65;color:var(--ink)">
+        Heads up — attending this event is your ticket into <strong>${communityName}</strong>'s inner circle.
+        Show up, have fun, and your group access unlocks automatically. Just like that.
+      </div>
+      <div style="display:flex;gap:10px">
+        <a href="${calLink}" target="_blank" rel="noopener"
+           class="btn btn-secondary btn-sm" style="flex:1;justify-content:center">
+          📅 Add to Calendar
+        </a>
+        ${mapsLink ? `
+        <a href="${mapsLink}" target="_blank" rel="noopener"
+           class="btn btn-secondary btn-sm" style="flex:1;justify-content:center">
+          📍 Get Directions
+        </a>` : ''}
+      </div>
+      <button onclick="hideModal()" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:10px">Done!</button>
     `);
   }
 
