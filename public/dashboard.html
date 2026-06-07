@@ -70,6 +70,14 @@
       white-space: nowrap;
     }
     .rsvp-status.waitlist { background: var(--yellow); }
+
+    .notif-banner {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 18px max(20px, calc((100vw - 1200px)/2));
+      font-size: 0.9rem; line-height: 1.55;
+    }
+    .notif-unlock { background: #F0FFF8; border-bottom: 2px solid var(--wellness); }
+    .notif-waitlist { background: #FFF8E7; border-bottom: 2px solid #F5C842; }
   </style>
 </head>
 <body>
@@ -109,8 +117,26 @@
     }
   }
 
-  function renderDashboard({ profile, communities, upcoming_rsvps, past_events }) {
-    const name = profile?.name || 'friend';
+  function renderDashboard({ user, communities, upcoming_rsvps, past_events }) {
+    const name = user?.name || 'friend';
+
+    // Onboarding modal — show once on first visit
+    if (!localStorage.getItem('circles_onboarded')) {
+      localStorage.setItem('circles_onboarded', '1');
+      setTimeout(() => showOnboardingModal(name), 400);
+    }
+
+    // Unlock notification — membership upgraded in last 48h
+    const recentUnlocks = communities.filter(c => {
+      if (c.membership_type !== 'member' || !c.upgraded_at) return false;
+      return (Date.now() - new Date(c.upgraded_at)) < 48 * 60 * 60 * 1000;
+    });
+
+    // Waitlist promoted notification — promoted in last 48h
+    const recentPromotions = upcoming_rsvps.filter(r => {
+      if (!r.promoted_at) return false;
+      return (Date.now() - new Date(r.promoted_at)) < 48 * 60 * 60 * 1000;
+    });
 
     const communitiesHtml = communities.length
       ? communities.map(c => {
@@ -146,7 +172,7 @@
               </div>
               <div class="rsvp-card-info">
                 <h4>${ev.title}</h4>
-                <p>${ev.communities?.cover_emoji || ''} ${ev.communities?.name || ''} · ${formatTime(ev.time_start)} · ${ev.location || ''}</p>
+                <p>${ev.communities?.cover_emoji || ''} ${ev.communities?.name || ''} ${ev.time ? '· ' + ev.time : ''} ${ev.location ? '· ' + ev.location : ''}</p>
               </div>
               <span class="rsvp-status ${r.status === 'waitlist' ? 'waitlist' : ''}">${r.status === 'waitlist' ? 'Waitlisted' : 'Going ✓'}</span>
               <button class="leave-btn" onclick="cancelRsvp('${ev.id}', this)">Cancel</button>
@@ -181,7 +207,35 @@
            <p>Your event history will appear here.</p>
          </div>`;
 
+    const unlockBanners = recentUnlocks.map(c => `
+      <div class="notif-banner notif-unlock">
+        <span style="font-size:1.5rem">🎊</span>
+        <div>
+          <strong>Ayy you actually came!</strong><br>
+          You attended an event and now you're officially part of <strong>${c.name}</strong>.
+          ${c.whatsapp_link ? `<a href="${c.whatsapp_link}" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px" class="btn btn-accent btn-sm">Join the Group →</a>` : ''}
+        </div>
+        <button onclick="this.closest('.notif-banner').remove()" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:inherit;flex-shrink:0">✕</button>
+      </div>`).join('');
+
+    const promotionBanners = recentPromotions.map(r => {
+      const ev = r.events;
+      if (!ev) return '';
+      return `
+        <div class="notif-banner notif-waitlist">
+          <span style="font-size:1.5rem">🏃</span>
+          <div>
+            <strong>Your turn! A spot just opened up.</strong><br>
+            Someone dropped out of <strong>${ev.title}</strong> and you're next on the waitlist.
+            You have 24 hours to confirm before we move to the next person.
+            <a href="/event.html?id=${ev.id}" style="display:inline-block;margin-top:8px" class="btn btn-primary btn-sm">Confirm My Spot →</a>
+          </div>
+          <button onclick="this.closest('.notif-banner').remove()" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:inherit;flex-shrink:0">✕</button>
+        </div>`;
+    }).join('');
+
     document.getElementById('page-content').innerHTML = `
+      ${unlockBanners}${promotionBanners}
       <div class="dash-hero">
         <h1>Hey ${name} 👋</h1>
         <p>Welcome back to your circles.</p>
@@ -200,6 +254,27 @@
           <div class="flex-col">${pastHtml}</div>
         </div>
       </div>`;
+  }
+
+  function showOnboardingModal(name) {
+    showModal(`
+      <div style="text-align:center;padding:8px 0">
+        <div style="font-size:3rem;margin-bottom:14px">👀</div>
+        <h2 style="font-size:1.5rem;margin-bottom:16px">Welcome to Circles.</h2>
+        <div style="text-align:left;background:var(--offwhite);border-radius:16px;padding:20px;margin-bottom:20px;font-size:0.95rem;line-height:1.8;color:var(--ink)">
+          Here's how this works —<br>
+          find a community you vibe with,<br>
+          show up to one of their events,<br>
+          and boom — you're in.<br><br>
+          No swiping. No awkward cold messages.<br>
+          Just real people, real interests, real good time.
+        </div>
+        <button onclick="hideModal();window.location.href='/communities.html'" class="btn btn-primary btn-lg" style="width:100%;justify-content:center">
+          Let's find your circle →
+        </button>
+        <button onclick="hideModal()" class="btn btn-secondary" style="width:100%;margin-top:10px">I'll explore on my own</button>
+      </div>
+    `);
   }
 
   async function cancelRsvp(eventId, btn) {

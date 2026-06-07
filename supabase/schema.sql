@@ -65,6 +65,7 @@ create table public.rsvps (
   event_id uuid references public.events(id) on delete cascade,
   status text default 'attending' check (status in ('attending', 'waitlist', 'cancelled')),
   attended boolean default false,
+  promoted_at timestamptz,
   created_at timestamptz default now(),
   unique(user_id, event_id)
 );

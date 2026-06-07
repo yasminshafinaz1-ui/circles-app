@@ -223,6 +223,9 @@ app.post('/api/events/:id/rsvp', requireAuth, async (req, res) => {
 
 app.delete('/api/events/:id/rsvp', requireAuth, async (req, res) => {
   try {
+    const { data: event } = await supabase
+      .from('events').select('capacity').eq('id', req.params.id).single();
+
     const { error } = await supabase
       .from('rsvps')
       .update({ status: 'cancelled' })
@@ -230,6 +233,27 @@ app.delete('/api/events/:id/rsvp', requireAuth, async (req, res) => {
       .eq('user_id', req.user.id);
 
     if (error) return res.status(500).json({ error: error.message });
+
+    // Auto-promote first waitlist person if event has capacity
+    if (event?.capacity) {
+      const { count: attending } = await supabase
+        .from('rsvps').select('*', { count: 'exact', head: true })
+        .eq('event_id', req.params.id).eq('status', 'attending');
+
+      if (attending < event.capacity) {
+        const { data: next } = await supabase
+          .from('rsvps').select('id, user_id')
+          .eq('event_id', req.params.id).eq('status', 'waitlist')
+          .order('created_at', { ascending: true }).limit(1).single();
+
+        if (next) {
+          await supabase.from('rsvps')
+            .update({ status: 'attending', promoted_at: new Date().toISOString() })
+            .eq('id', next.id);
+        }
+      }
+    }
+
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -243,8 +267,8 @@ app.get('/api/dashboard', requireAuth, async (req, res) => {
 
     const [userRes, commRes, upcomingRes, pastRes] = await Promise.all([
       supabase.from('users').select('name, email, age, interests, instagram').eq('id', req.user.id).single(),
-      supabase.from('memberships').select('membership_type, communities(*)').eq('user_id', req.user.id),
-      supabase.from('rsvps').select('*, events(*, communities(name, category, cover_emoji))').eq('user_id', req.user.id).in('status', ['attending', 'waitlist']),
+      supabase.from('memberships').select('membership_type, upgraded_at, communities(*)').eq('user_id', req.user.id),
+      supabase.from('rsvps').select('*, promoted_at, events(*, communities(name, category, cover_emoji))').eq('user_id', req.user.id).in('status', ['attending', 'waitlist']),
       supabase.from('rsvps').select('*, events(*, communities(name, category, cover_emoji))').eq('user_id', req.user.id).eq('status', 'attending')
     ]);
 
@@ -255,7 +279,8 @@ app.get('/api/dashboard', requireAuth, async (req, res) => {
       user: userRes.data,
       communities: (commRes.data || []).filter(m => m.communities).map(m => ({
         ...m.communities,
-        membership_type: m.membership_type
+        membership_type: m.membership_type,
+        upgraded_at: m.upgraded_at
       })),
       upcoming_rsvps: upcoming,
       past_events: past

@@ -18,3 +18,7 @@ alter table public.memberships
 -- Add attended flag to rsvps
 alter table public.rsvps
   add column if not exists attended boolean default false;
+
+-- Track when a waitlist user was promoted to attending
+alter table public.rsvps
+  add column if not exists promoted_at timestamptz;
