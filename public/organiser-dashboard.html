@@ -6,17 +6,39 @@
   <title>Organiser Dashboard — Circles</title>
   <link rel="stylesheet" href="/css/styles.css" />
   <style>
-    .dash-content {
-      padding: 40px max(20px, calc((100vw - 1200px)/2));
+    .dash-hero {
+      background: var(--ink);
+      padding: 48px max(20px, calc((100vw - 1200px)/2)) 40px;
+      color: white;
     }
-    .section-title { font-size: 1.2rem; margin-bottom: 16px; margin-top: 40px; }
-    .events-table-wrap { overflow-x: auto; }
-    .attendees-modal-content p { font-size: 0.9rem; margin-bottom: 16px; }
+    .dash-hero h1 { color: white; font-size: 2rem; margin-bottom: 6px; }
+    .dash-hero p { color: rgba(255,255,255,0.6); font-size: 1rem; }
+    .dash-content {
+      padding: 40px max(20px, calc((100vw - 1200px)/2)) 80px;
+    }
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px; margin-top: 40px;
+    }
+    .section-header h3 { font-size: 1.2rem; margin: 0; }
+    .table-wrap { overflow-x: auto; }
+    .status-pill {
+      display: inline-block; padding: 3px 10px; border-radius: 100px;
+      font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .status-approved { background: var(--mint); color: var(--wellness); }
+    .status-pending { background: #FFF3CD; color: #856404; }
+    .status-rejected { background: #FFE5E5; color: var(--active); }
+
+    /* Event create modal */
+    .create-event-form .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media(max-width:600px) {
+      .create-event-form .form-row { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
 
-<!-- Nav -->
 <nav class="nav">
   <div class="nav-inner">
     <a href="/" class="nav-logo"><span class="nav-logo-dot"></span>Circles</a>
@@ -38,12 +60,15 @@
 <script src="/js/app.js"></script>
 <script src="/js/auth.js"></script>
 <script>
+  let _dashData = null;
+
   async function loadOrgDashboard() {
     const user = await requireOrganiser();
     if (!user) return;
 
     try {
       const data = await api('/api/organiser/dashboard');
+      _dashData = data;
       renderDashboard(data, user);
     } catch (e) {
       document.getElementById('page-content').innerHTML =
@@ -53,10 +78,10 @@
 
   function renderDashboard({ communities, events, members }, user) {
     const totalMembers = communities.reduce((s, c) => s + (c.member_count || 0), 0);
-    const upcomingEvents = events.filter(e => e.date >= new Date().toISOString().split('T')[0]);
+    const today = new Date().toISOString().split('T')[0];
+    const upcomingEvents = events.filter(e => e.date >= today);
     const totalRsvps = events.reduce((s, e) => s + (e.rsvp_count || 0), 0);
 
-    // Stats
     const statsHtml = `
       <div class="stat-grid">
         <div class="stat-card">
@@ -77,58 +102,66 @@
         </div>
       </div>`;
 
-    // Events table
-    const eventsHtml = events.length
-      ? `<div class="events-table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Event</th>
-                <th>Date</th>
-                <th>RSVPs</th>
-                <th>Capacity</th>
-                <th>Price</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${events.map(e => `
-                <tr>
-                  <td><strong>${e.title}</strong></td>
-                  <td>${formatDate(e.date)}</td>
-                  <td>${e.rsvp_count || 0}</td>
-                  <td>${e.capacity || 'Unlimited'}</td>
-                  <td>${formatPrice(e.price_rm)}</td>
-                  <td>
-                    <button class="btn btn-sm btn-secondary" onclick="viewAttendees('${e.id}', '${e.title.replace(/'/g, "\\'")}')">
-                      View Attendees
-                    </button>
-                  </td>
-                </tr>`).join('')}
-            </tbody>
-          </table>
-        </div>`
-      : `<div class="empty-state"><div class="empty-icon">📅</div><h3>No events yet</h3><p>Contact us to add events to your community.</p></div>`;
+    const communityRows = communities.map(c => `
+      <tr>
+        <td><strong>${c.cover_emoji || '🌟'} ${c.name}</strong></td>
+        <td><span class="badge badge-${c.category}">${getCategoryLabel(c.category)}</span></td>
+        <td>${c.member_count || 0}</td>
+        <td><span class="status-pill status-${c.status}">${c.status}</span></td>
+      </tr>`).join('');
 
-    // Members table
-    const membersHtml = members.length
-      ? `<div class="events-table-wrap">
+    const communitiesHtml = communities.length
+      ? `<div class="table-wrap">
           <table class="data-table">
-            <thead>
-              <tr><th>Name</th><th>Email</th><th>Instagram</th><th>Joined</th></tr>
-            </thead>
-            <tbody>
-              ${members.map(m => `
-                <tr>
-                  <td>${m.profiles?.name || '—'}</td>
-                  <td>${m.profiles?.email || '—'}</td>
-                  <td>${m.profiles?.instagram_handle ? '@' + m.profiles.instagram_handle : '—'}</td>
-                  <td>${m.joined_at ? new Date(m.joined_at).toLocaleDateString('en-MY') : '—'}</td>
-                </tr>`).join('')}
-            </tbody>
+            <thead><tr><th>Community</th><th>Category</th><th>Members</th><th>Status</th></tr></thead>
+            <tbody>${communityRows}</tbody>
           </table>
         </div>`
-      : `<div class="empty-state"><div class="empty-icon">👥</div><h3>No members yet</h3><p>Share your community listing to get members.</p></div>`;
+      : `<div class="empty-state"><div class="empty-icon">🏘️</div><h3>No communities yet</h3>
+          <p><a href="/submit-community.html" class="btn btn-primary btn-sm" style="display:inline-flex;margin-top:12px">Submit a community →</a></p></div>`;
+
+    const eventRows = events.map(e => `
+      <tr>
+        <td><strong>${e.title}</strong></td>
+        <td>${formatDate(e.date)}</td>
+        <td>${e.rsvp_count || 0}${e.capacity ? ' / ' + e.capacity : ''}</td>
+        <td>${formatPrice(e.price_rm)}</td>
+        <td>
+          <button class="btn btn-sm btn-secondary" onclick="viewAttendees('${e.id}', '${e.title.replace(/'/g, "\\'")}')">
+            Attendees
+          </button>
+        </td>
+      </tr>`).join('');
+
+    const eventsHtml = events.length
+      ? `<div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Event</th><th>Date</th><th>RSVPs</th><th>Price</th><th></th></tr></thead>
+            <tbody>${eventRows}</tbody>
+          </table>
+        </div>`
+      : `<div class="empty-state"><div class="empty-icon">📅</div><h3>No events yet</h3><p>Create your first event below.</p></div>`;
+
+    const memberRows = members.map(m => `
+      <tr>
+        <td>${m.users?.name || '—'}</td>
+        <td>${m.users?.email || '—'}</td>
+        <td>${m.users?.instagram ? '@' + m.users.instagram : '—'}</td>
+        <td>${m.joined_at ? new Date(m.joined_at).toLocaleDateString('en-MY') : '—'}</td>
+      </tr>`).join('');
+
+    const membersHtml = members.length
+      ? `<div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Name</th><th>Email</th><th>Instagram</th><th>Joined</th></tr></thead>
+            <tbody>${memberRows}</tbody>
+          </table>
+        </div>`
+      : `<div class="empty-state"><div class="empty-icon">👥</div><h3>No members yet</h3><p>Share your community listing to attract members.</p></div>`;
+
+    const approvedCommunities = communities.filter(c => c.status === 'approved');
+    const communityOptions = approvedCommunities.map(c =>
+      `<option value="${c.id}">${c.name}</option>`).join('');
 
     document.getElementById('page-content').innerHTML = `
       <div class="dash-hero">
@@ -137,11 +170,107 @@
       </div>
       <div class="dash-content">
         ${statsHtml}
-        <h3 class="section-title">Your Events</h3>
+
+        <div class="section-header">
+          <h3>Your Communities</h3>
+          <a href="/submit-community.html" class="btn btn-secondary btn-sm">+ Submit New</a>
+        </div>
+        ${communitiesHtml}
+
+        <div class="section-header">
+          <h3>Your Events</h3>
+          ${approvedCommunities.length ? `<button class="btn btn-primary btn-sm" onclick="openCreateEvent()">+ Create Event</button>` : ''}
+        </div>
         ${eventsHtml}
-        <h3 class="section-title">Community Members</h3>
+
+        <div class="section-header">
+          <h3>Community Members</h3>
+        </div>
         ${membersHtml}
+      </div>
+
+      <!-- Create Event Modal (hidden) -->
+      <div id="create-event-modal" style="display:none">
+        <form class="create-event-form" id="create-event-form" onsubmit="submitCreateEvent(event)">
+          <div class="form-group">
+            <label class="form-label">Community *</label>
+            <select class="form-input" id="ce-community" required>
+              <option value="">Select community…</option>
+              ${communityOptions}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Event title *</label>
+            <input type="text" class="form-input" id="ce-title" placeholder="e.g. Sunday Morning Hike" maxlength="120" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea class="form-input" id="ce-description" rows="3" maxlength="600" placeholder="What will you do?" style="resize:vertical"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Date *</label>
+              <input type="date" class="form-input" id="ce-date" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Time</label>
+              <input type="text" class="form-input" id="ce-time" placeholder="e.g. 9:00 AM" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Location</label>
+            <input type="text" class="form-input" id="ce-location" placeholder="e.g. Bukit Kiara, KL" maxlength="200" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Capacity</label>
+              <input type="number" class="form-input" id="ce-capacity" placeholder="Leave blank for unlimited" min="1" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Price (RM)</label>
+              <input type="number" class="form-input" id="ce-price" placeholder="0 for FREE" min="0" value="0" />
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:8px">
+            <button type="submit" class="btn btn-primary" id="ce-submit-btn">Create Event →</button>
+            <button type="button" class="btn btn-secondary" onclick="hideModal()">Cancel</button>
+          </div>
+        </form>
       </div>`;
+  }
+
+  function openCreateEvent() {
+    const formHtml = document.getElementById('create-event-modal').innerHTML;
+    showModal(formHtml, 'Create New Event');
+  }
+
+  async function submitCreateEvent(e) {
+    e.preventDefault();
+    const btn = document.getElementById('ce-submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Creating…';
+
+    const payload = {
+      community_id: document.getElementById('ce-community').value,
+      title: document.getElementById('ce-title').value.trim(),
+      description: document.getElementById('ce-description').value.trim() || null,
+      date: document.getElementById('ce-date').value,
+      time: document.getElementById('ce-time').value.trim() || null,
+      location: document.getElementById('ce-location').value.trim() || null,
+      capacity: document.getElementById('ce-capacity').value || null,
+      price_rm: document.getElementById('ce-price').value || 0
+    };
+
+    try {
+      await api('/api/organiser/events', { method: 'POST', body: JSON.stringify(payload) });
+      hideModal();
+      showToast('Event created! 🎉', 'success');
+      loadOrgDashboard();
+    } catch (err) {
+      showToast(err.message || 'Could not create event.', 'error');
+      btn.disabled = false;
+      btn.textContent = 'Create Event →';
+    }
   }
 
   async function viewAttendees(eventId, eventTitle) {
@@ -149,22 +278,25 @@
     try {
       const { attendees } = await api(`/api/organiser/events/${eventId}/attendees`);
       const content = attendees.length
-        ? `<p>${attendees.length} attendee${attendees.length === 1 ? '' : 's'}</p>
-           <table class="data-table" style="margin-top:8px">
-             <thead><tr><th>Name</th><th>Email</th><th>Status</th></tr></thead>
+        ? `<p style="font-size:0.9rem;color:var(--ink-light);margin-bottom:12px">${attendees.length} attendee${attendees.length === 1 ? '' : 's'}</p>
+           <table class="data-table">
+             <thead><tr><th>Name</th><th>Email</th><th>Instagram</th><th>Status</th></tr></thead>
              <tbody>
                ${attendees.map(a => `
                  <tr>
-                   <td>${a.profiles?.name || '—'}</td>
-                   <td>${a.profiles?.email || '—'}</td>
+                   <td>${a.users?.name || '—'}</td>
+                   <td>${a.users?.email || '—'}</td>
+                   <td>${a.users?.instagram ? '@' + a.users.instagram : '—'}</td>
                    <td><span class="badge ${a.status === 'attending' ? 'badge-wellness' : 'badge-active'}">${a.status}</span></td>
                  </tr>`).join('')}
              </tbody>
            </table>`
-        : '<p>No attendees yet.</p>';
-      document.getElementById('modal-content').innerHTML = `<h3 style="margin-bottom:16px">Attendees: ${eventTitle}</h3>${content}`;
-    } catch (e) {
-      document.getElementById('modal-content').innerHTML = `<p style="color:var(--active)">Could not load attendees: ${e.message}</p>`;
+        : '<p style="color:var(--ink-light)">No attendees yet.</p>';
+      document.getElementById('modal-content').innerHTML =
+        `<h3 style="margin-bottom:16px;font-size:1.2rem">Attendees: ${eventTitle}</h3>${content}`;
+    } catch (err) {
+      document.getElementById('modal-content').innerHTML =
+        `<p style="color:var(--active)">Could not load attendees: ${err.message}</p>`;
     }
   }
 

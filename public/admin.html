@@ -14,131 +14,263 @@
       line-height: 1.6;
     }
     h1 { color: #fff; font-size: 1.6rem; margin-bottom: 4px; }
-    h2 { color: #a0a0c0; font-size: 1rem; margin: 28px 0 10px; text-transform: uppercase; letter-spacing: 0.06em; }
-    .brand { color: #ff6b6b; font-size: 1rem; margin-bottom: 32px; }
-    .stat-row { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 8px; }
+    h2 { color: #a0a0c0; font-size: 0.85rem; margin: 32px 0 12px; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid #1a1a2e; padding-bottom: 8px; }
+    .brand { color: #ff6b6b; font-size: 0.9rem; margin-bottom: 32px; }
+
+    .stat-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
     .stat-box {
-      background: #1a1a2e;
-      border: 1px solid #2a2a4e;
-      border-radius: 12px;
-      padding: 16px 24px;
-      min-width: 160px;
+      background: #1a1a2e; border: 1px solid #2a2a4e; border-radius: 12px;
+      padding: 16px 24px; min-width: 140px;
     }
     .stat-box .val { font-size: 2rem; font-weight: bold; color: #00c9a7; }
-    .stat-box .lbl { font-size: 0.75rem; color: #6060a0; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
-    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-    th { padding: 8px 16px; text-align: left; background: #1a1a2e; color: #6060a0; font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid #2a2a4e; }
-    td { padding: 8px 16px; border-bottom: 1px solid #1a1a2e; font-size: 0.88rem; }
-    tr:hover td { background: #1a1a2e; }
-    .error { color: #ff6b6b; padding: 20px; }
+    .stat-box .lbl { font-size: 0.72rem; color: #6060a0; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+
     .north-star-box {
       background: linear-gradient(135deg, #1a1a2e, #2a1a3e);
-      border: 2px solid #845ec2;
-      border-radius: 16px;
-      padding: 24px 32px;
-      margin: 16px 0 28px;
-      display: inline-block;
+      border: 2px solid #845ec2; border-radius: 16px;
+      padding: 24px 32px; margin: 12px 0 24px; display: inline-block;
     }
-    .north-star-box .val { font-size: 3.5rem; font-weight: bold; color: #c8f7c5; }
-    .north-star-box .lbl { font-size: 0.82rem; color: #a0a0c0; margin-top: 4px; }
+    .north-star-box .val { font-size: 3.5rem; font-weight: bold; color: #c8f7c5; line-height: 1; }
+    .north-star-box .lbl { font-size: 0.8rem; color: #a0a0c0; margin-top: 6px; }
+
+    /* Weekly bar chart */
+    .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 120px; margin: 16px 0 8px; }
+    .bar-col { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+    .bar { width: 100%; background: #845ec2; border-radius: 4px 4px 0 0; min-height: 4px; transition: height 0.3s; }
+    .bar-col.current .bar { background: #c8f7c5; }
+    .bar-label { font-size: 0.62rem; color: #6060a0; text-align: center; white-space: nowrap; }
+    .bar-val { font-size: 0.72rem; color: #a0a0c0; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 0.85rem; }
+    th { padding: 8px 12px; text-align: left; background: #1a1a2e; color: #6060a0; font-size: 0.72rem; text-transform: uppercase; border-bottom: 1px solid #2a2a4e; }
+    td { padding: 10px 12px; border-bottom: 1px solid #161626; vertical-align: top; }
+    tr:hover td { background: #13131f; }
+
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 100px;
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+    }
+    .badge-pending { background: #3a2a10; color: #f5c842; }
+    .badge-approved { background: #0d2a1a; color: #00c9a7; }
+    .badge-rejected { background: #2a0d0d; color: #ff6b6b; }
+
+    .action-row { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+    .btn-approve {
+      background: #0d2a1a; border: 1px solid #00c9a7; color: #00c9a7;
+      padding: 5px 14px; border-radius: 8px; cursor: pointer;
+      font-family: inherit; font-size: 0.8rem; transition: background 0.15s;
+    }
+    .btn-approve:hover { background: #00c9a7; color: #0d0d1a; }
+    .btn-reject {
+      background: #2a0d0d; border: 1px solid #ff6b6b; color: #ff6b6b;
+      padding: 5px 14px; border-radius: 8px; cursor: pointer;
+      font-family: inherit; font-size: 0.8rem; transition: background 0.15s;
+    }
+    .btn-reject:hover { background: #ff6b6b; color: #0d0d1a; }
+    .btn-refresh {
+      background: #1a1a2e; border: 1px solid #2a2a4e; color: #a0a0c0;
+      padding: 5px 14px; border-radius: 8px; cursor: pointer;
+      font-family: inherit; font-size: 0.8rem;
+    }
+
     .auth-form { margin-bottom: 32px; }
     .auth-form input {
-      background: #1a1a2e;
-      border: 1px solid #2a2a4e;
-      color: #e0e0f0;
-      padding: 10px 16px;
-      border-radius: 8px;
-      font-family: inherit;
-      font-size: 0.9rem;
-      outline: none;
-      width: 280px;
-      margin-right: 8px;
+      background: #1a1a2e; border: 1px solid #2a2a4e; color: #e0e0f0;
+      padding: 10px 16px; border-radius: 8px; font-family: inherit;
+      font-size: 0.9rem; outline: none; width: 280px; margin-right: 8px;
     }
     .auth-form button {
-      background: #845ec2;
-      color: #fff;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-family: inherit;
-      font-size: 0.9rem;
+      background: #845ec2; color: #fff; border: none;
+      padding: 10px 20px; border-radius: 8px; cursor: pointer;
+      font-family: inherit; font-size: 0.9rem;
+    }
+    .error { color: #ff6b6b; padding: 20px; }
+    .empty-note { color: #3a3a6a; font-style: italic; padding: 16px 0; font-size: 0.85rem; }
+
+    .community-detail { font-size: 0.78rem; color: #6060a0; margin-top: 4px; line-height: 1.5; }
+    .community-name { font-weight: bold; color: #e0e0f0; }
+
+    textarea.reject-input {
+      background: #1a1a2e; border: 1px solid #2a2a4e; color: #e0e0f0;
+      padding: 6px 10px; border-radius: 6px; font-family: inherit;
+      font-size: 0.8rem; width: 100%; margin-top: 6px; resize: vertical;
+      min-height: 48px; display: none;
     }
   </style>
 </head>
 <body>
 
 <h1>⚙ Circles Admin</h1>
-<div class="brand">circles.my — internal metrics</div>
+<div class="brand">circles.my — internal</div>
 
 <div id="auth-section" class="auth-form">
   <input type="password" id="admin-key-input" placeholder="Enter admin key…" />
-  <button onclick="loadStats()">Access →</button>
+  <button onclick="loadAll()">Access →</button>
 </div>
 
 <div id="stats-content"></div>
 
 <script>
-  // Check URL param
+  let _adminKey = '';
+
   const urlParams = new URLSearchParams(window.location.search);
   const keyFromUrl = urlParams.get('key');
   if (keyFromUrl) {
     document.getElementById('admin-key-input').value = keyFromUrl;
-    loadStats();
+    loadAll();
   }
 
-  async function loadStats() {
+  document.getElementById('admin-key-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') loadAll();
+  });
+
+  async function loadAll() {
     const key = document.getElementById('admin-key-input').value.trim();
     if (!key) { alert('Enter the admin key'); return; }
-
+    _adminKey = key;
     document.getElementById('stats-content').innerHTML = '<p style="color:#6060a0">Loading…</p>';
-
     try {
-      const res = await fetch(`/api/admin/stats?key=${encodeURIComponent(key)}`);
-      const data = await res.json();
+      const [statsRes, pendingRes] = await Promise.all([
+        fetch(`/api/admin/stats?key=${encodeURIComponent(key)}`),
+        fetch(`/api/admin/pending?key=${encodeURIComponent(key)}`)
+      ]);
+      const stats = await statsRes.json();
+      const pending = await pendingRes.json();
 
-      if (!res.ok) {
-        document.getElementById('stats-content').innerHTML = `<div class="error">❌ ${data.error || 'Access denied'}</div>`;
+      if (!statsRes.ok) {
+        document.getElementById('stats-content').innerHTML = `<div class="error">❌ ${stats.error || 'Access denied'}</div>`;
         return;
       }
 
       document.getElementById('auth-section').style.display = 'none';
-
-      const weeklyRows = (data.weekly_new_joiners || []).map(w =>
-        `<tr><td>${w.week_start}</td><td style="color:#00c9a7">${w.new_joiners}</td></tr>`
-      ).join('');
-
-      document.getElementById('stats-content').innerHTML = `
-        <h2>⭐ North Star Metric</h2>
-        <p style="color:#6060a0;margin-bottom:12px">New people who joined at least 1 community this week</p>
-        <div class="north-star-box">
-          <div class="val">${data.north_star}</div>
-          <div class="lbl">new community joiners this week</div>
-        </div>
-
-        <h2>📊 Platform Totals</h2>
-        <div class="stat-row">
-          <div class="stat-box"><div class="val">${data.total_active_users}</div><div class="lbl">Active Users</div></div>
-          <div class="stat-box"><div class="val">${data.total_communities}</div><div class="lbl">Communities</div></div>
-          <div class="stat-box"><div class="val">${data.total_events}</div><div class="lbl">Events</div></div>
-          <div class="stat-box"><div class="val">${data.total_rsvps}</div><div class="lbl">RSVPs</div></div>
-        </div>
-
-        <h2>📅 Weekly New Community Joiners (last 8 weeks)</h2>
-        <table>
-          <thead><tr><th>Week Starting</th><th>New Joiners</th></tr></thead>
-          <tbody>${weeklyRows}</tbody>
-        </table>
-      `;
+      renderAll(stats, pending.communities || []);
     } catch (e) {
       document.getElementById('stats-content').innerHTML = `<div class="error">❌ Error: ${e.message}</div>`;
     }
   }
 
-  // Allow Enter key
-  document.getElementById('admin-key-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') loadStats();
-  });
+  function renderAll(stats, pendingCommunities) {
+    const weeks = stats.weekly_new_joiners || [];
+    const maxVal = Math.max(...weeks.map(w => w.new_joiners), 1);
+
+    const barsHtml = weeks.map((w, i) => {
+      const isLast = i === weeks.length - 1;
+      const pct = Math.round((w.new_joiners / maxVal) * 100);
+      const label = w.week_start.slice(5); // MM-DD
+      return `
+        <div class="bar-col ${isLast ? 'current' : ''}">
+          <div class="bar-val">${w.new_joiners}</div>
+          <div class="bar" style="height:${Math.max(pct, 3)}%"></div>
+          <div class="bar-label">${label}</div>
+        </div>`;
+    }).join('');
+
+    const weeklyTable = weeks.map(w =>
+      `<tr><td>${w.week_start}</td><td style="color:#00c9a7;font-weight:bold">${w.new_joiners}</td></tr>`
+    ).join('');
+
+    const pendingHtml = pendingCommunities.length
+      ? pendingCommunities.map(c => `
+          <tr id="row-${c.id}">
+            <td>
+              <div class="community-name">${c.name}</div>
+              <div class="community-detail">
+                ${c.category} · ${c.description ? c.description.slice(0, 100) + (c.description.length > 100 ? '…' : '') : ''}
+              </div>
+              ${c.who_its_for ? `<div class="community-detail">For: ${c.who_its_for}</div>` : ''}
+              ${c.whatsapp_link ? `<div class="community-detail">WA: ${c.whatsapp_link}</div>` : ''}
+            </td>
+            <td style="white-space:nowrap">
+              ${c.users?.name || '—'}<br>
+              <span style="color:#6060a0;font-size:0.75rem">${c.users?.email || ''}</span>
+            </td>
+            <td style="white-space:nowrap;color:#6060a0;font-size:0.78rem">
+              ${c.created_at ? new Date(c.created_at).toLocaleDateString('en-MY') : '—'}
+            </td>
+            <td>
+              <div class="action-row">
+                <button class="btn-approve" onclick="approveC('${c.id}')">✓ Approve</button>
+                <button class="btn-reject" onclick="showRejectBox('${c.id}')">✕ Reject</button>
+              </div>
+              <textarea class="reject-input" id="reject-reason-${c.id}" placeholder="Reason (optional)…"></textarea>
+              <div id="reject-confirm-${c.id}" style="display:none;margin-top:6px">
+                <button class="btn-reject" onclick="rejectC('${c.id}')">Confirm reject</button>
+              </div>
+            </td>
+          </tr>`).join('')
+      : `<tr><td colspan="4"><div class="empty-note">✅ No pending communities — you're all caught up.</div></td></tr>`;
+
+    document.getElementById('stats-content').innerHTML = `
+      <h2>⭐ North Star Metric</h2>
+      <p style="color:#6060a0;font-size:0.82rem;margin-bottom:10px">New people who joined at least 1 community this week</p>
+      <div class="north-star-box">
+        <div class="val">${stats.north_star}</div>
+        <div class="lbl">new community joiners this week</div>
+      </div>
+
+      <h2>📈 Weekly Trend (last 8 weeks)</h2>
+      <div class="bar-chart">${barsHtml}</div>
+      <table style="margin-top:12px">
+        <thead><tr><th>Week Starting</th><th>New Joiners</th></tr></thead>
+        <tbody>${weeklyTable}</tbody>
+      </table>
+
+      <h2>📊 Platform Totals</h2>
+      <div class="stat-row">
+        <div class="stat-box"><div class="val">${stats.total_active_users}</div><div class="lbl">Active Users</div></div>
+        <div class="stat-box"><div class="val">${stats.total_communities}</div><div class="lbl">Communities</div></div>
+        <div class="stat-box"><div class="val">${stats.total_events}</div><div class="lbl">Events</div></div>
+        <div class="stat-box"><div class="val">${stats.total_rsvps}</div><div class="lbl">RSVPs</div></div>
+      </div>
+
+      <h2>🕐 Pending Community Reviews
+        <button class="btn-refresh" onclick="loadAll()" style="margin-left:12px;vertical-align:middle">↻ Refresh</button>
+      </h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Community</th>
+            <th>Submitted by</th>
+            <th>Date</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="pending-tbody">${pendingHtml}</tbody>
+      </table>`;
+  }
+
+  function showRejectBox(id) {
+    const box = document.getElementById(`reject-reason-${id}`);
+    const confirm = document.getElementById(`reject-confirm-${id}`);
+    box.style.display = 'block';
+    confirm.style.display = 'block';
+    box.focus();
+  }
+
+  async function approveC(id) {
+    const row = document.getElementById(`row-${id}`);
+    try {
+      const res = await fetch(`/api/admin/communities/${id}/approve?key=${encodeURIComponent(_adminKey)}`, { method: 'POST' });
+      if (!res.ok) { const d = await res.json(); alert(d.error); return; }
+      row.style.opacity = '0.4';
+      row.querySelector('.action-row').innerHTML = '<span style="color:#00c9a7;font-size:0.8rem">✓ Approved</span>';
+    } catch (e) { alert(e.message); }
+  }
+
+  async function rejectC(id) {
+    const reason = document.getElementById(`reject-reason-${id}`).value.trim();
+    const row = document.getElementById(`row-${id}`);
+    try {
+      const res = await fetch(`/api/admin/communities/${id}/reject?key=${encodeURIComponent(_adminKey)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason })
+      });
+      if (!res.ok) { const d = await res.json(); alert(d.error); return; }
+      row.style.opacity = '0.4';
+      row.querySelector('.action-row').innerHTML = '<span style="color:#ff6b6b;font-size:0.8rem">✕ Rejected</span>';
+    } catch (e) { alert(e.message); }
+  }
 </script>
 </body>
 </html>
