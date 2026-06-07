@@ -441,6 +441,35 @@ app.post('/api/communities/submit', requireAuth, async (req, res) => {
   }
 });
 
+// ─── Organiser: Update Cover Photo ───────────────────────────────────────────
+app.post('/api/organiser/communities/:id/cover', requireAuth, async (req, res) => {
+  try {
+    const { cover_url } = req.body;
+    if (!cover_url) return res.status(400).json({ error: 'cover_url required' });
+
+    // Verify organiser owns this community
+    const { data: community } = await supabase
+      .from('communities')
+      .select('organiser_id')
+      .eq('id', req.params.id)
+      .single();
+
+    if (!community || community.organiser_id !== req.user.id) {
+      return res.status(403).json({ error: 'Not your community' });
+    }
+
+    const { error } = await supabase
+      .from('communities')
+      .update({ cover_photo: cover_url })
+      .eq('id', req.params.id);
+
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ─── Organiser: Create Event ──────────────────────────────────────────────────
 app.post('/api/organiser/events', requireAuth, async (req, res) => {
   try {

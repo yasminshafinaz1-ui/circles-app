@@ -114,9 +114,23 @@ function renderCommunityCard(community, userMembership = null) {
       ? `${followerCount} follower${followerCount !== 1 ? 's' : ''}`
       : '';
 
-  return `
-    <div class="card community-card" data-id="${community.id}" data-category="${community.category}">
-      <a href="/community.html?id=${community.id}" class="c-card-link">
+  const topSection = community.cover_photo
+    ? `<a href="/community.html?id=${community.id}" class="c-card-link">
+        <div class="c-card-photo" style="background-image:url('${community.cover_photo}')">
+          <span class="c-card-cat c-card-cat-photo badge-${community.category}">${getCategoryEmoji(community.category)} ${getCategoryLabel(community.category)}</span>
+          <div class="c-card-photo-bottom">
+            <span class="c-card-photo-name">${community.name}</span>
+            ${countLabel ? `<span class="c-card-photo-count">${countLabel}</span>` : ''}
+          </div>
+        </div>
+        <div class="c-card-body">
+          <p>${community.description || ''}</p>
+        </div>
+        <div class="c-card-meta">
+          <span class="c-card-who">${community.who_its_for || 'All welcome'}</span>
+        </div>
+      </a>`
+    : `<a href="/community.html?id=${community.id}" class="c-card-link">
         <div class="c-card-top ${community.category}-bg">
           <span class="c-card-emoji">${community.cover_emoji || '🌟'}</span>
           <span class="c-card-cat badge-${community.category}">${getCategoryEmoji(community.category)} ${getCategoryLabel(community.category)}</span>
@@ -129,7 +143,11 @@ function renderCommunityCard(community, userMembership = null) {
           <span class="c-card-who">${community.who_its_for || 'All welcome'}</span>
           <span class="c-card-members">${countLabel}</span>
         </div>
-      </a>
+      </a>`;
+
+  return `
+    <div class="card community-card" data-id="${community.id}" data-category="${community.category}">
+      ${topSection}
       <div class="c-card-footer">
         ${!isMember ? `
         <div class="tooltip-wrap">
