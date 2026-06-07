@@ -78,6 +78,7 @@
 
   function renderDashboard({ communities, events, members }, user) {
     const totalMembers = communities.reduce((s, c) => s + (c.member_count || 0), 0);
+    const totalFollowers = communities.reduce((s, c) => s + (c.follower_count || 0), 0);
     const today = new Date().toISOString().split('T')[0];
     const upcomingEvents = events.filter(e => e.date >= today);
     const totalRsvps = events.reduce((s, e) => s + (e.rsvp_count || 0), 0);
@@ -85,8 +86,14 @@
     const statsHtml = `
       <div class="stat-grid">
         <div class="stat-card">
-          <div class="stat-label">Total Members</div>
+          <div class="stat-label">Full Members 🔓</div>
           <div class="stat-value">${totalMembers}</div>
+          <div style="font-size:0.75rem;color:var(--ink-light);margin-top:4px">attended IRL</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Followers</div>
+          <div class="stat-value">${totalFollowers}</div>
+          <div style="font-size:0.75rem;color:var(--ink-light);margin-top:4px">not yet attended</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Upcoming Events</div>
@@ -96,10 +103,6 @@
           <div class="stat-label">Total RSVPs</div>
           <div class="stat-value">${totalRsvps}</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-label">Communities</div>
-          <div class="stat-value">${communities.length}</div>
-        </div>
       </div>`;
 
     const communityRows = communities.map(c => `
@@ -107,13 +110,14 @@
         <td><strong>${c.cover_emoji || '🌟'} ${c.name}</strong></td>
         <td><span class="badge badge-${c.category}">${getCategoryLabel(c.category)}</span></td>
         <td>${c.member_count || 0}</td>
+        <td>${c.follower_count || 0}</td>
         <td><span class="status-pill status-${c.status}">${c.status}</span></td>
       </tr>`).join('');
 
     const communitiesHtml = communities.length
       ? `<div class="table-wrap">
           <table class="data-table">
-            <thead><tr><th>Community</th><th>Category</th><th>Members</th><th>Status</th></tr></thead>
+            <thead><tr><th>Community</th><th>Category</th><th>Members 🔓</th><th>Followers</th><th>Status</th></tr></thead>
             <tbody>${communityRows}</tbody>
           </table>
         </div>`
@@ -127,8 +131,8 @@
         <td>${e.rsvp_count || 0}${e.capacity ? ' / ' + e.capacity : ''}</td>
         <td>${formatPrice(e.price_rm)}</td>
         <td>
-          <button class="btn btn-sm btn-secondary" onclick="viewAttendees('${e.id}', '${e.title.replace(/'/g, "\\'")}')">
-            Attendees
+          <button class="btn btn-sm btn-secondary" onclick="openCheckin('${e.id}', '${e.title.replace(/'/g, "\\'")}')">
+            Check-in
           </button>
         </td>
       </tr>`).join('');
@@ -273,30 +277,78 @@
     }
   }
 
-  async function viewAttendees(eventId, eventTitle) {
-    showModal('<div class="spinner"></div>', `Attendees: ${eventTitle}`);
+  async function openCheckin(eventId, eventTitle) {
+    showModal('<div class="spinner"></div>', `Check-in: ${eventTitle}`);
+    await refreshCheckinModal(eventId, eventTitle);
+  }
+
+  async function refreshCheckinModal(eventId, eventTitle) {
     try {
-      const { attendees } = await api(`/api/organiser/events/${eventId}/attendees`);
-      const content = attendees.length
-        ? `<p style="font-size:0.9rem;color:var(--ink-light);margin-bottom:12px">${attendees.length} attendee${attendees.length === 1 ? '' : 's'}</p>
+      const { rsvps, whatsapp_link } = await api(`/api/organiser/events/${eventId}/rsvps`);
+      const attending = rsvps.filter(r => r.status !== 'cancelled');
+
+      const rows = attending.map(r => {
+        const attended = r.attended;
+        return `
+          <tr id="checkin-row-${r.user_id}">
+            <td>
+              <strong>${r.users?.name || '—'}</strong><br>
+              <span style="font-size:0.78rem;color:var(--ink-light)">${r.users?.email || ''}</span>
+            </td>
+            <td>${r.users?.instagram ? '@' + r.users.instagram : '—'}</td>
+            <td><span class="badge ${r.status === 'attending' ? 'badge-wellness' : 'badge-active'}">${r.status}</span></td>
+            <td>
+              ${attended
+                ? `<span class="badge badge-wellness">✓ Attended</span>`
+                : `<button class="btn btn-sm btn-primary" onclick="markAttended('${eventId}','${r.user_id}','${eventTitle}')">
+                     Mark Attended
+                   </button>`}
+            </td>
+          </tr>`;
+      }).join('');
+
+      const content = attending.length
+        ? `<p style="font-size:0.85rem;color:var(--ink-light);margin-bottom:12px">
+             ${attending.length} RSVP${attending.length !== 1 ? 's' : ''} · tap "Mark Attended" to unlock membership
+           </p>
+           <div style="overflow-x:auto">
            <table class="data-table">
-             <thead><tr><th>Name</th><th>Email</th><th>Instagram</th><th>Status</th></tr></thead>
-             <tbody>
-               ${attendees.map(a => `
-                 <tr>
-                   <td>${a.users?.name || '—'}</td>
-                   <td>${a.users?.email || '—'}</td>
-                   <td>${a.users?.instagram ? '@' + a.users.instagram : '—'}</td>
-                   <td><span class="badge ${a.status === 'attending' ? 'badge-wellness' : 'badge-active'}">${a.status}</span></td>
-                 </tr>`).join('')}
-             </tbody>
-           </table>`
-        : '<p style="color:var(--ink-light)">No attendees yet.</p>';
+             <thead><tr><th>Name</th><th>Instagram</th><th>RSVP</th><th>Attended</th></tr></thead>
+             <tbody>${rows}</tbody>
+           </table>
+           </div>`
+        : '<p style="color:var(--ink-light)">No RSVPs yet.</p>';
+
       document.getElementById('modal-content').innerHTML =
-        `<h3 style="margin-bottom:16px;font-size:1.2rem">Attendees: ${eventTitle}</h3>${content}`;
+        `<h3 style="margin-bottom:16px;font-size:1.2rem">Check-in: ${eventTitle}</h3>${content}`;
     } catch (err) {
       document.getElementById('modal-content').innerHTML =
-        `<p style="color:var(--active)">Could not load attendees: ${err.message}</p>`;
+        `<p style="color:var(--active)">Could not load RSVPs: ${err.message}</p>`;
+    }
+  }
+
+  async function markAttended(eventId, userId, eventTitle) {
+    const btn = document.querySelector(`#checkin-row-${userId} button`);
+    if (btn) { btn.disabled = true; btn.textContent = '…'; }
+    try {
+      const { whatsapp_link } = await api(`/api/organiser/events/${eventId}/checkin`, {
+        method: 'POST',
+        body: JSON.stringify({ user_id: userId })
+      });
+
+      // Update the row immediately
+      const row = document.getElementById(`checkin-row-${userId}`);
+      if (row) {
+        const td = row.querySelector('td:last-child');
+        td.innerHTML = `<span class="badge badge-wellness">✓ Attended</span>`;
+        if (whatsapp_link) {
+          td.innerHTML += `<div style="font-size:0.75rem;color:var(--wellness);margin-top:4px">WhatsApp link sent 💬</div>`;
+        }
+      }
+      showToast('Marked as attended! Membership unlocked. 🎉', 'success');
+    } catch (err) {
+      showToast(err.message || 'Could not mark attended.', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'Mark Attended'; }
     }
   }
 

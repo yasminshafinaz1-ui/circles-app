@@ -87,17 +87,19 @@
       const { community, events } = await api(`/api/communities/${id}`);
       document.title = `${community.name} — Circles`;
 
-      // Check if logged-in user has joined
-      let joined = false;
+      // Check logged-in user's membership level
+      let userMembershipType = null;
       const session = await getSession();
       if (session) {
         const sb = await initSupabaseClient();
         if (sb) {
           const { data } = await sb.from('memberships')
-            .select('id').eq('community_id', id).eq('user_id', session.user.id).single();
-          joined = !!data;
+            .select('membership_type').eq('community_id', id).eq('user_id', session.user.id).single();
+          userMembershipType = data?.membership_type || null;
         }
       }
+      const isFollower = userMembershipType === 'follower';
+      const isMember = userMembershipType === 'member';
 
       const catColor = getCategoryBg(community.category);
 
@@ -126,14 +128,30 @@
             </div>
           </div>
           <div class="c-hero-actions">
-            <button class="btn btn-primary btn-lg ${joined ? 'btn-joined' : ''}"
-              id="join-btn"
-              onclick="handleJoinCommunity('${community.id}', '${(community.whatsapp_link||'').replace(/'/g,'')}', this)"
-              ${joined ? 'disabled' : ''}>
-              ${joined ? '✓ Joined' : 'Join Community →'}
+            <button class="btn btn-primary btn-lg ${isMember ? 'btn-joined' : isFollower ? 'btn-following' : ''}"
+              id="follow-btn"
+              onclick="handleFollowCommunity('${community.id}', this)"
+              ${isMember ? 'disabled' : ''}>
+              ${isMember ? '✓ Member' : isFollower ? 'Following ✓' : 'Follow →'}
             </button>
-            <div class="member-badge">👥 ${community.member_count || 0} members</div>
+            ${community.member_count > 0
+              ? `<div class="member-badge">👥 ${community.member_count} member${community.member_count !== 1 ? 's' : ''}</div>`
+              : ''}
+            ${community.follower_count > 0
+              ? `<div class="member-badge" style="opacity:0.7">${community.follower_count} follower${community.follower_count !== 1 ? 's' : ''}</div>`
+              : ''}
           </div>
+          ${isMember && community.whatsapp_link ? `
+          <div style="margin-top:16px">
+            <a href="${community.whatsapp_link}" target="_blank" rel="noopener"
+               class="btn btn-accent btn-sm">
+              💬 Join WhatsApp Group
+            </a>
+          </div>` : ''}
+          ${isFollower ? `
+          <p style="margin-top:14px;font-size:0.85rem;color:var(--ink-light)">
+            RSVP and attend an event to unlock full membership and the WhatsApp group 🔓
+          </p>` : ''}
         </div>
 
         ${community.who_its_for ? `
