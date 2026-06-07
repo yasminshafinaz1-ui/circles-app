@@ -339,6 +339,31 @@ function initScrollReveal() {
   els.forEach(el => io.observe(el));
 }
 
+// ── Tooltip positioning (JS-based to escape overflow:hidden cards) ──
+document.addEventListener('mouseover', e => {
+  const wrap = e.target.closest('.tooltip-wrap');
+  if (!wrap) return;
+  const tip = wrap.querySelector('.tooltip-text');
+  if (!tip) return;
+  // Temporarily make visible to measure height
+  tip.style.visibility = 'hidden';
+  tip.style.opacity = '0';
+  tip.style.display = 'block';
+  const rect = wrap.getBoundingClientRect();
+  const tipH = tip.offsetHeight;
+  const left = Math.min(rect.left, window.innerWidth - 196);
+  tip.style.top = (rect.top + window.scrollY - tipH - 10) + 'px';
+  tip.style.left = left + 'px';
+  tip.style.display = '';
+  tip.classList.add('visible');
+});
+document.addEventListener('mouseout', e => {
+  const wrap = e.target.closest('.tooltip-wrap');
+  if (!wrap) return;
+  const tip = wrap.querySelector('.tooltip-text');
+  if (tip) tip.classList.remove('visible');
+});
+
 document.addEventListener('DOMContentLoaded', () => {
   initAuth();
   initScrollReveal();

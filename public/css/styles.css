@@ -624,23 +624,17 @@ p { color: var(--ink-light); font-weight: 400; }
 
 /* ── Tooltip ───────────────────────────────────────────────── */
 .tooltip-wrap { position: relative; display: inline-block; }
-.tooltip-wrap .tooltip-text {
+.tooltip-text {
   visibility: hidden; opacity: 0;
   background: var(--ink); color: white;
-  font-size: 0.75rem; font-weight: 600; line-height: 1.4;
-  padding: 7px 11px; border-radius: 10px;
-  white-space: nowrap;
-  position: absolute; bottom: calc(100% + 8px); left: 50%;
-  transform: translateX(-50%);
+  font-size: 0.75rem; font-weight: 600; line-height: 1.5;
+  padding: 8px 12px; border-radius: 10px;
+  white-space: normal; width: 180px;
+  position: fixed;
   transition: opacity 0.15s;
-  pointer-events: none; z-index: 20;
+  pointer-events: none; z-index: 9999;
 }
-.tooltip-wrap .tooltip-text::after {
-  content: ''; position: absolute; top: 100%; left: 50%;
-  transform: translateX(-50%);
-  border: 5px solid transparent; border-top-color: var(--ink);
-}
-.tooltip-wrap:hover .tooltip-text { visibility: visible; opacity: 1; }
+.tooltip-text.visible { visibility: visible; opacity: 1; }
 
 /* ── btn-following / btn-joined ────────────────────────────── */
 .btn-following {
