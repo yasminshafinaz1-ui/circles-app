@@ -48,6 +48,25 @@
     .events-section h2 { margin-bottom: 20px; }
 
     .btn-joined { background: var(--mint) !important; color: var(--ink) !important; cursor: default; }
+    .hero-non-member-msg {
+      margin-top: 28px;
+      max-width: 520px;
+      padding: 24px 28px;
+      background: var(--white);
+      border: 2px solid var(--border);
+      border-radius: 20px;
+    }
+    .hero-non-member-msg h3 {
+      font-size: 1.15rem;
+      margin-bottom: 12px;
+    }
+    .hero-non-member-msg p {
+      font-size: 0.92rem;
+      color: var(--ink-light);
+      line-height: 1.65;
+      margin-bottom: 8px;
+    }
+    .hero-non-member-msg p:last-child { margin-bottom: 0; }
   </style>
 </head>
 <body>
@@ -148,10 +167,13 @@
               💬 Join WhatsApp Group
             </a>
           </div>` : ''}
-          ${isFollower ? `
-          <p style="margin-top:14px;font-size:0.85rem;color:var(--ink-light)">
-            RSVP and attend an event to unlock full membership and the WhatsApp group 🔓
-          </p>` : ''}
+          ${!isMember ? `
+          <div class="hero-non-member-msg">
+            <h3>Want in? Come lah. 👋</h3>
+            <p>The best way to join the circle isn't clicking a button — it's showing up.</p>
+            <p>Pick an event, come as you are, and see if this is your kind of people. If it clicks, your spot in the group is waiting for you.</p>
+            <p>No pressure. Just good people doing good things with the same reason as yours.</p>
+          </div>` : ''}
         </div>
 
         ${community.who_its_for ? `
