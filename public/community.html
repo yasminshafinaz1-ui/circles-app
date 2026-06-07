@@ -7,73 +7,51 @@
   <link rel="stylesheet" href="/css/styles.css" />
   <style>
     .community-hero {
-      padding: 80px max(20px, calc((100vw - 1200px)/2)) 48px;
-      background: linear-gradient(135deg, var(--cat-color, var(--lavender)) 0%, var(--offwhite) 60%);
+      padding: 72px max(20px, calc((100vw - 1100px)/2)) 48px;
       border-bottom: 2px solid var(--border);
     }
-    .c-hero-top { display: flex; align-items: flex-start; gap: 24px; margin-bottom: 24px; }
+    .c-back { font-size: 0.85rem; font-weight: 700; color: var(--ink-light); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 28px; }
+    .c-back:hover { color: var(--ink); }
+    .c-hero-top { display: flex; align-items: flex-start; gap: 24px; margin-bottom: 28px; flex-wrap: wrap; }
     .c-hero-emoji {
-      font-size: 3.5rem;
-      width: 80px; height: 80px;
-      background: var(--white);
-      border-radius: 22px;
+      font-size: 3rem; width: 80px; height: 80px;
+      background: var(--white); border-radius: 22px;
       border: 2px solid var(--border);
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-    .c-hero-info { flex: 1; }
-    .c-hero-info h1 { font-size: 2rem; margin-bottom: 8px; }
-    .c-hero-info p { font-size: 1rem; max-width: 580px; }
-    .c-hero-actions {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-top: 24px;
-    }
+    .c-hero-info { flex: 1; min-width: 200px; }
+    .c-hero-info h1 { font-size: 2rem; margin: 8px 0 10px; }
+    .c-hero-info p { font-size: 1rem; color: var(--ink-light); max-width: 580px; line-height: 1.6; }
+    .c-hero-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
     .member-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: var(--white);
-      border: 2px solid var(--border);
-      border-radius: var(--radius-pill);
-      padding: 8px 16px;
-      font-size: 0.88rem;
-      font-weight: 700;
-      color: var(--ink);
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--white); border: 2px solid var(--border);
+      border-radius: var(--radius-pill); padding: 8px 16px;
+      font-size: 0.88rem; font-weight: 700;
     }
 
     .who-section {
-      padding: 40px max(20px, calc((100vw - 1200px)/2));
-      background: var(--white);
-      border-bottom: 2px solid var(--border);
+      padding: 36px max(20px, calc((100vw - 1100px)/2));
+      background: var(--white); border-bottom: 2px solid var(--border);
     }
-    .who-grid {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-top: 16px;
-    }
+    .who-section h3 { margin-bottom: 14px; font-size: 1rem; color: var(--ink-light); font-family: 'Nunito', sans-serif; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+    .who-tags { display: flex; gap: 10px; flex-wrap: wrap; }
     .who-tag {
-      padding: 8px 16px;
-      border-radius: var(--radius-pill);
-      background: var(--offwhite);
-      border: 2px solid var(--border);
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--ink);
+      padding: 8px 16px; border-radius: var(--radius-pill);
+      background: var(--offwhite); border: 2px solid var(--border);
+      font-size: 0.85rem; font-weight: 700;
     }
 
-    .community-events {
-      padding: 40px max(20px, calc((100vw - 1200px)/2));
+    .events-section {
+      padding: 40px max(20px, calc((100vw - 1100px)/2)) 80px;
     }
-    .community-events h2 { margin-bottom: 20px; }
+    .events-section h2 { margin-bottom: 20px; }
+
+    .btn-joined { background: var(--mint) !important; color: var(--ink) !important; cursor: default; }
   </style>
 </head>
 <body>
 
-<!-- Nav -->
 <nav class="nav">
   <div class="nav-inner">
     <a href="/" class="nav-logo"><span class="nav-logo-dot"></span>Circles</a>
@@ -89,7 +67,7 @@
 </nav>
 
 <div class="pt-nav" id="page-content">
-  <div style="text-align:center;padding:60px"><div class="spinner"></div></div>
+  <div style="text-align:center;padding:80px"><div class="spinner"></div></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -97,19 +75,11 @@
 <script src="/js/app.js"></script>
 <script src="/js/auth.js"></script>
 <script>
-  const CAT_BG = {
-    active: '#FFE5E5',
-    creative: '#E8D5F5',
-    career: '#D6EEFF',
-    wellness: '#C8F7C5',
-    social: '#FFE5D9'
-  };
-
   async function loadCommunity() {
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get('id');
+    const id = new URLSearchParams(window.location.search).get('id');
     if (!id) {
-      document.getElementById('page-content').innerHTML = '<div class="empty-state"><h3>Community not found</h3><p><a href="/communities.html">Browse all communities →</a></p></div>';
+      document.getElementById('page-content').innerHTML =
+        `<div class="empty-state" style="padding:80px 20px"><h3>Community not found</h3><p><a href="/communities.html">← Browse all communities</a></p></div>`;
       return;
     }
 
@@ -117,25 +87,40 @@
       const { community, events } = await api(`/api/communities/${id}`);
       document.title = `${community.name} — Circles`;
 
-      // Check if user joined
+      // Check if logged-in user has joined
       let joined = false;
       const session = await getSession();
       if (session) {
         const sb = await initSupabaseClient();
         if (sb) {
-          const { data } = await sb.from('community_members').select('id').eq('community_id', id).eq('user_id', session.user.id).single();
+          const { data } = await sb.from('memberships')
+            .select('id').eq('community_id', id).eq('user_id', session.user.id).single();
           joined = !!data;
         }
       }
 
-      const catColor = CAT_BG[community.category] || '#FAFAF8';
+      const catColor = getCategoryBg(community.category);
+
+      // Load user RSVP map for events
+      let rsvpMap = {};
+      if (session) {
+        const sb = await initSupabaseClient();
+        if (sb && events?.length) {
+          const eventIds = events.map(e => e.id);
+          const { data: rsvps } = await sb.from('rsvps')
+            .select('event_id,status').in('event_id', eventIds)
+            .eq('user_id', session.user.id).neq('status','cancelled');
+          (rsvps||[]).forEach(r => { rsvpMap[r.event_id] = r.status; });
+        }
+      }
 
       document.getElementById('page-content').innerHTML = `
-        <div class="community-hero" style="--cat-color:${catColor}">
+        <div class="community-hero" style="background:linear-gradient(135deg,${catColor} 0%,var(--offwhite) 60%)">
+          <a href="/communities.html" class="c-back">← All Communities</a>
           <div class="c-hero-top">
             <div class="c-hero-emoji">${community.cover_emoji || '🌟'}</div>
             <div class="c-hero-info">
-              <span class="badge badge-${community.category}" style="margin-bottom:8px">${getCategoryLabel(community.category)}</span>
+              <span class="badge badge-${community.category}">${getCategoryEmoji(community.category)} ${getCategoryLabel(community.category)}</span>
               <h1>${community.name}</h1>
               <p>${community.description || ''}</p>
             </div>
@@ -143,33 +128,33 @@
           <div class="c-hero-actions">
             <button class="btn btn-primary btn-lg ${joined ? 'btn-joined' : ''}"
               id="join-btn"
-              onclick="handleJoinCommunity('${community.id}', '${(community.whatsapp_link || '').replace(/'/g, '')}', this)"
+              onclick="handleJoinCommunity('${community.id}', '${(community.whatsapp_link||'').replace(/'/g,'')}', this)"
               ${joined ? 'disabled' : ''}>
-              ${joined ? 'Joined ✓' : 'Join Community →'}
+              ${joined ? '✓ Joined' : 'Join Community →'}
             </button>
             <div class="member-badge">👥 ${community.member_count || 0} members</div>
           </div>
         </div>
 
+        ${community.who_its_for ? `
         <div class="who-section">
           <h3>Who it's for</h3>
-          <div class="who-grid">
-            <span class="who-tag">👤 ${community.who_gender || 'All genders'}</span>
-            <span class="who-tag">🎂 Ages ${community.who_age_min}–${community.who_age_max}</span>
-            ${community.who_vibe ? community.who_vibe.split(',').map(v => `<span class="who-tag">✨ ${v.trim()}</span>`).join('') : ''}
+          <div class="who-tags">
+            ${community.who_its_for.split('·').map(v => `<span class="who-tag">${v.trim()}</span>`).join('')}
           </div>
-        </div>
+        </div>` : ''}
 
-        <div class="community-events">
+        <div class="events-section">
           <h2>Upcoming Events</h2>
           ${events && events.length
-            ? `<div class="flex-col">${events.map(e => renderEventRow(e)).join('')}</div>`
-            : `<div class="empty-state"><div class="empty-icon">📅</div><h3>No upcoming events</h3><p>Check back soon — this community is getting something planned!</p></div>`
+            ? `<div class="flex-col">${events.map(e => renderEventRow(e, rsvpMap)).join('')}</div>`
+            : `<div class="empty-state"><div class="empty-icon">📅</div><h3>No upcoming events yet</h3><p>This community is cooking something up. Check back soon!</p></div>`
           }
         </div>`;
 
     } catch (e) {
-      document.getElementById('page-content').innerHTML = `<div class="empty-state"><h3>Could not load community</h3><p>${e.message}</p><a href="/communities.html">← Back to communities</a></div>`;
+      document.getElementById('page-content').innerHTML =
+        `<div class="empty-state" style="padding:80px 20px"><h3>Could not load community</h3><p>${e.message}</p><a href="/communities.html">← Back to communities</a></div>`;
     }
   }
 

@@ -578,3 +578,46 @@ p { color: var(--ink-light); font-weight: 400; }
   .e-row { flex-wrap: wrap; }
   h1 { font-size: 2rem; }
 }
+
+/* ── Section Label ─────────────────────────────────────────── */
+.section-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  display: block;
+}
+
+/* ── Cat pill with CSS var color ───────────────────────────── */
+.cat-pill.active[style*="--c"] {
+  background: var(--c) !important;
+  border-color: var(--c) !important;
+  color: white !important;
+}
+
+/* ── Event right column ────────────────────────────────────── */
+.e-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.e-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-light);
+}
+
+/* ── btn-going ─────────────────────────────────────────────── */
+.btn-going {
+  background: var(--mint);
+  color: var(--ink);
+}
+.btn-going:hover {
+  background: #a8e6a8;
+  color: var(--ink);
+}
