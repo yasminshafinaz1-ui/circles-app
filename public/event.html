@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Event — Circles</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <style>
+    .event-hero {
+      padding: 64px max(20px, calc((100vw - 1100px)/2)) 48px;
+      border-bottom: 2px solid var(--border);
+    }
+    .e-back { font-size: 0.85rem; font-weight: 700; color: var(--ink-light); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 28px; }
+    .e-back:hover { color: var(--ink); }
+
+    .e-hero-layout { display: grid; grid-template-columns: 1fr 360px; gap: 48px; align-items: start; }
+
+    .e-title-area {}
+    .e-title-area h1 { font-size: clamp(1.8rem, 4vw, 2.8rem); margin: 12px 0 16px; }
+    .e-desc { font-size: 1rem; color: var(--ink-light); line-height: 1.7; margin-bottom: 28px; }
+
+    .e-detail-list { display: flex; flex-direction: column; gap: 12px; }
+    .e-detail-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      font-size: 0.92rem; font-weight: 600; color: var(--ink);
+    }
+    .e-detail-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: var(--offwhite); border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; flex-shrink: 0;
+    }
+    .e-detail-label { font-size: 0.75rem; font-weight: 700; color: var(--ink-light); text-transform: uppercase; letter-spacing: 0.5px; }
+    .e-detail-value { font-size: 0.92rem; font-weight: 700; margin-top: 1px; }
+
+    /* RSVP Card */
+    .rsvp-card {
+      background: var(--white);
+      border-radius: var(--radius-card);
+      border: 2px solid var(--border);
+      padding: 28px;
+      position: sticky;
+      top: 88px;
+    }
+    .rsvp-price {
+      font-family: 'Fraunces', serif;
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+    .rsvp-price.free { color: var(--wellness); font-size: 1.5rem; }
+    .rsvp-spots { font-size: 0.85rem; font-weight: 700; color: var(--ink-light); margin-bottom: 20px; }
+    .rsvp-spots .spots-num { color: var(--ink); }
+    .rsvp-spots.full { color: var(--active); }
+
+    .rsvp-btn-wrap { margin-bottom: 16px; }
+    .rsvp-btn-wrap .btn { width: 100%; justify-content: center; font-size: 1rem; padding: 16px; }
+
+    .rsvp-meta { font-size: 0.8rem; color: var(--ink-light); font-weight: 600; text-align: center; line-height: 1.5; }
+
+    .capacity-bar {
+      height: 6px; background: var(--border); border-radius: 100px;
+      margin-bottom: 12px; overflow: hidden;
+    }
+    .capacity-fill {
+      height: 100%; border-radius: 100px;
+      background: var(--career);
+      transition: width 0.4s ease;
+    }
+    .capacity-fill.nearly-full { background: var(--social); }
+    .capacity-fill.full { background: var(--active); }
+
+    /* Confirmation state */
+    .rsvp-confirmed {
+      text-align: center;
+      padding: 8px 0;
+    }
+    .rsvp-confirmed .confirm-icon { font-size: 2.5rem; margin-bottom: 10px; }
+    .rsvp-confirmed h3 { font-size: 1.1rem; margin-bottom: 6px; }
+    .rsvp-confirmed p { font-size: 0.85rem; color: var(--ink-light); margin-bottom: 16px; }
+
+    /* Community strip */
+    .event-community {
+      padding: 32px max(20px, calc((100vw - 1100px)/2));
+      background: var(--white);
+      border-top: 2px solid var(--border);
+    }
+    .event-community h3 { font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--ink-light); margin-bottom: 16px; }
+    .community-strip-card {
+      display: flex; align-items: center; gap: 16px;
+      background: var(--offwhite); border-radius: 18px; padding: 18px 20px;
+      border: 2px solid var(--border); text-decoration: none; color: inherit;
+      max-width: 480px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .community-strip-card:hover { transform: translateY(-2px); border-color: var(--ink); }
+    .community-strip-emoji { font-size: 2rem; flex-shrink: 0; }
+    .community-strip-info h4 { font-size: 1rem; margin-bottom: 4px; }
+    .community-strip-info p { font-size: 0.82rem; color: var(--ink-light); }
+
+    @media(max-width:860px) {
+      .e-hero-layout { grid-template-columns: 1fr; }
+      .rsvp-card { position: static; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo"><span class="nav-logo-dot"></span>Circles</a>
+    <div class="nav-links">
+      <a href="/communities.html" class="hide-mobile">Communities</a>
+      <a href="/events.html">Events</a>
+      <a href="/login.html" id="nav-login" class="hide-mobile">Log In</a>
+      <a href="/dashboard.html" id="nav-dashboard" class="btn btn-secondary btn-sm" style="display:none">My Dashboard</a>
+      <a href="/signup.html" id="nav-cta" class="nav-cta">Sign Up Free</a>
+      <button id="nav-logout" onclick="signOut()" class="btn btn-secondary btn-sm" style="display:none">Log Out</button>
+    </div>
+  </div>
+</nav>
+
+<div class="pt-nav" id="page-content">
+  <div style="text-align:center;padding:80px"><div class="spinner"></div></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/supabase-client.js"></script>
+<script src="/js/app.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+  let currentEvent = null;
+  let currentRsvpStatus = null; // null | 'attending' | 'waitlist'
+
+  async function loadEvent() {
+    const id = new URLSearchParams(window.location.search).get('id');
+    if (!id) {
+      document.getElementById('page-content').innerHTML =
+        `<div class="empty-state" style="padding:80px 20px"><h3>Event not found</h3><p><a href="/events.html">← Browse events</a></p></div>`;
+      return;
+    }
+
+    try {
+      const { event } = await api(`/api/events/${id}`);
+      currentEvent = event;
+      document.title = `${event.title} — Circles`;
+
+      // Check user's existing RSVP
+      const session = await getSession();
+      if (session) {
+        const sb = await initSupabaseClient();
+        if (sb) {
+          const { data: rsvp } = await sb.from('rsvps')
+            .select('status').eq('event_id', id).eq('user_id', session.user.id).single();
+          if (rsvp && rsvp.status !== 'cancelled') currentRsvpStatus = rsvp.status;
+        }
+      }
+
+      renderPage();
+    } catch (e) {
+      document.getElementById('page-content').innerHTML =
+        `<div class="empty-state" style="padding:80px 20px"><h3>Could not load event</h3><p>${e.message}</p><a href="/events.html">← Back to events</a></div>`;
+    }
+  }
+
+  function renderPage() {
+    const e = currentEvent;
+    const cat = e.communities?.category || '';
+    const catColor = getCategoryColor(cat);
+    const price = formatPrice(e.price_rm);
+    const { day, mon } = formatDateShort(e.date);
+    const spotsLeft = e.capacity ? e.capacity - (e.rsvp_count || 0) : null;
+    const isFull = e.capacity && spotsLeft <= 0;
+    const fillPct = e.capacity ? Math.min(100, Math.round((e.rsvp_count || 0) / e.capacity * 100)) : 0;
+    const fillClass = fillPct >= 100 ? 'full' : fillPct >= 75 ? 'nearly-full' : '';
+
+    document.getElementById('page-content').innerHTML = `
+      <div class="event-hero" style="background:linear-gradient(135deg,${getCategoryBg(cat)} 0%,var(--offwhite) 55%)">
+        <a href="/events.html" class="e-back">← All Events</a>
+
+        <div class="e-hero-layout">
+          <div class="e-title-area">
+            <span class="badge badge-${cat}">${getCategoryEmoji(cat)} ${getCategoryLabel(cat)}</span>
+            <h1>${e.title}</h1>
+            <p class="e-desc">${e.description || 'Come join the community for this event!'}</p>
+
+            <div class="e-detail-list">
+              <div class="e-detail-item">
+                <div class="e-detail-icon">📅</div>
+                <div>
+                  <div class="e-detail-label">Date</div>
+                  <div class="e-detail-value">${formatDate(e.date)}</div>
+                </div>
+              </div>
+              ${e.time ? `
+              <div class="e-detail-item">
+                <div class="e-detail-icon">🕐</div>
+                <div>
+                  <div class="e-detail-label">Time</div>
+                  <div class="e-detail-value">${e.time}</div>
+                </div>
+              </div>` : ''}
+              ${e.location ? `
+              <div class="e-detail-item">
+                <div class="e-detail-icon">📍</div>
+                <div>
+                  <div class="e-detail-label">Location</div>
+                  <div class="e-detail-value">${e.location}</div>
+                </div>
+              </div>` : ''}
+              ${e.capacity ? `
+              <div class="e-detail-item">
+                <div class="e-detail-icon">👥</div>
+                <div>
+                  <div class="e-detail-label">Capacity</div>
+                  <div class="e-detail-value">${e.rsvp_count || 0} going · ${spotsLeft > 0 ? spotsLeft + ' spots left' : 'Full'}</div>
+                </div>
+              </div>` : ''}
+            </div>
+          </div>
+
+          <div class="rsvp-card" id="rsvp-card">
+            ${renderRsvpCard(price, spotsLeft, fillPct, fillClass, isFull)}
+          </div>
+        </div>
+      </div>
+
+      ${e.communities ? `
+      <div class="event-community">
+        <h3>Organised by</h3>
+        <a href="/community.html?id=${e.community_id}" class="community-strip-card">
+          <div class="community-strip-emoji">${e.communities.cover_emoji || getCategoryEmoji(cat)}</div>
+          <div class="community-strip-info">
+            <h4>${e.communities.name}</h4>
+            <p>${getCategoryLabel(cat)} · View community →</p>
+          </div>
+        </a>
+      </div>` : ''}
+    `;
+  }
+
+  function renderRsvpCard(price, spotsLeft, fillPct, fillClass, isFull) {
+    if (currentRsvpStatus === 'attending') {
+      return `
+        <div class="rsvp-confirmed">
+          <div class="confirm-icon">🎉</div>
+          <h3>You're going!</h3>
+          <p>Your spot is confirmed. See you there!</p>
+          <button class="btn btn-secondary btn-sm" style="width:100%;justify-content:center" onclick="cancelRsvp()">Cancel RSVP</button>
+        </div>`;
+    }
+
+    if (currentRsvpStatus === 'waitlist') {
+      return `
+        <div class="rsvp-confirmed">
+          <div class="confirm-icon">⏳</div>
+          <h3>You're on the waitlist</h3>
+          <p>We'll notify you if a spot opens up!</p>
+          <button class="btn btn-secondary btn-sm" style="width:100%;justify-content:center" onclick="cancelRsvp()">Leave Waitlist</button>
+        </div>`;
+    }
+
+    return `
+      <div class="rsvp-price ${price === 'FREE' ? 'free' : ''}">${price}</div>
+      <p class="rsvp-spots ${isFull ? 'full' : ''}">
+        ${spotsLeft === null
+          ? 'Unlimited spots'
+          : isFull
+            ? '⚠️ Event is full — join the waitlist'
+            : `<span class="spots-num">${spotsLeft}</span> spot${spotsLeft === 1 ? '' : 's'} left`
+        }
+      </p>
+      ${currentEvent.capacity ? `
+      <div class="capacity-bar">
+        <div class="capacity-fill ${fillClass}" style="width:${fillPct}%"></div>
+      </div>` : ''}
+      <div class="rsvp-btn-wrap">
+        <button class="btn btn-primary" id="rsvp-main-btn" onclick="doRsvp()">
+          ${isFull ? 'Join Waitlist' : 'RSVP — Save My Spot →'}
+        </button>
+      </div>
+      <p class="rsvp-meta">Free to RSVP. Cancel any time.<br>You'll need an account to confirm.</p>
+    `;
+  }
+
+  async function doRsvp() {
+    const session = await getSession();
+    if (!session) {
+      // Save intended event and redirect to signup
+      sessionStorage.setItem('rsvp_after_login', currentEvent.id);
+      window.location.href = `/signup.html?next=/event.html?id=${currentEvent.id}`;
+      return;
+    }
+
+    const btn = document.getElementById('rsvp-main-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving your spot…'; }
+
+    try {
+      const data = await api(`/api/events/${currentEvent.id}/rsvp`, { method: 'POST' });
+      currentRsvpStatus = data.rsvp?.status;
+
+      // Refresh RSVP count
+      const refreshed = await api(`/api/events/${currentEvent.id}`);
+      currentEvent = refreshed.event;
+
+      // Show confirmation modal
+      if (currentRsvpStatus === 'attending') {
+        showRsvpConfirmation();
+      } else {
+        showWaitlistConfirmation();
+      }
+
+      // Re-render the RSVP card
+      const { day, mon } = formatDateShort(currentEvent.date);
+      const spotsLeft = currentEvent.capacity ? currentEvent.capacity - (currentEvent.rsvp_count || 0) : null;
+      const isFull = currentEvent.capacity && spotsLeft <= 0;
+      const fillPct = currentEvent.capacity ? Math.min(100, Math.round((currentEvent.rsvp_count || 0) / currentEvent.capacity * 100)) : 0;
+      const fillClass = fillPct >= 100 ? 'full' : fillPct >= 75 ? 'nearly-full' : '';
+      const price = formatPrice(currentEvent.price_rm);
+      document.getElementById('rsvp-card').innerHTML = renderRsvpCard(price, spotsLeft, fillPct, fillClass, isFull);
+
+    } catch (e) {
+      showToast(e.message || 'Could not RSVP. Please try again.', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'RSVP — Save My Spot →'; }
+    }
+  }
+
+  async function cancelRsvp() {
+    if (!confirm('Cancel your RSVP for this event?')) return;
+    try {
+      await api(`/api/events/${currentEvent.id}/rsvp`, { method: 'DELETE' });
+      currentRsvpStatus = null;
+
+      const refreshed = await api(`/api/events/${currentEvent.id}`);
+      currentEvent = refreshed.event;
+
+      const spotsLeft = currentEvent.capacity ? currentEvent.capacity - (currentEvent.rsvp_count || 0) : null;
+      const isFull = currentEvent.capacity && spotsLeft <= 0;
+      const fillPct = currentEvent.capacity ? Math.min(100, Math.round((currentEvent.rsvp_count || 0) / currentEvent.capacity * 100)) : 0;
+      const fillClass = fillPct >= 100 ? 'full' : fillPct >= 75 ? 'nearly-full' : '';
+      const price = formatPrice(currentEvent.price_rm);
+      document.getElementById('rsvp-card').innerHTML = renderRsvpCard(price, spotsLeft, fillPct, fillClass, isFull);
+
+      showToast('RSVP cancelled.', 'info');
+    } catch (e) {
+      showToast(e.message || 'Could not cancel.', 'error');
+    }
+  }
+
+  function showRsvpConfirmation() {
+    const e = currentEvent;
+    showModal(`
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:3rem;margin-bottom:12px">🎉</div>
+        <h3 style="font-size:1.4rem;margin-bottom:8px">You're going!</h3>
+        <p style="color:var(--ink-light);font-size:0.95rem">Your spot at <strong>${e.title}</strong> is confirmed.</p>
+      </div>
+      <div style="background:var(--offwhite);border-radius:16px;padding:16px;margin-bottom:20px;font-size:0.88rem;font-weight:600">
+        <div style="margin-bottom:6px">📅 ${formatDate(e.date)}</div>
+        ${e.time ? `<div style="margin-bottom:6px">🕐 ${e.time}</div>` : ''}
+        ${e.location ? `<div>📍 ${e.location}</div>` : ''}
+      </div>
+      <a href="/dashboard.html" class="btn btn-primary" style="width:100%;justify-content:center;display:flex">
+        View My Events →
+      </a>
+      <button onclick="hideModal()" class="btn btn-secondary" style="width:100%;margin-top:10px">Close</button>
+    `);
+  }
+
+  function showWaitlistConfirmation() {
+    const e = currentEvent;
+    showModal(`
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:3rem;margin-bottom:12px">⏳</div>
+        <h3 style="font-size:1.4rem;margin-bottom:8px">You're on the waitlist!</h3>
+        <p style="color:var(--ink-light);font-size:0.95rem">This event is full but you're next in line for <strong>${e.title}</strong>.</p>
+      </div>
+      <div style="background:var(--offwhite);border-radius:16px;padding:16px;margin-bottom:20px;font-size:0.88rem;font-weight:600">
+        <div style="margin-bottom:6px">📅 ${formatDate(e.date)}</div>
+        ${e.location ? `<div>📍 ${e.location}</div>` : ''}
+      </div>
+      <p style="font-size:0.82rem;color:var(--ink-light);text-align:center;margin-bottom:16px">We'll let you know if a spot opens up!</p>
+      <button onclick="hideModal()" class="btn btn-primary" style="width:100%;justify-content:center">Got it!</button>
+    `);
+  }
+
+  loadEvent();
+</script>
+</body>
+</html>

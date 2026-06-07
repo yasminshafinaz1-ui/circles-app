@@ -156,12 +156,14 @@ function renderEventRow(event, userRsvpMap = {}) {
 
   return `
     <div class="e-row e-row-${cat}" data-id="${event.id}" data-category="${cat}">
-      <div class="e-date-box">
+      <a href="/event.html?id=${event.id}" class="e-date-box" style="text-decoration:none">
         <div class="e-date-day" style="color:${getCategoryColor(cat)}">${day}</div>
         <div class="e-date-mon">${mon}</div>
-      </div>
+      </a>
       <div class="e-info">
-        <h4>${event.title}</h4>
+        <a href="/event.html?id=${event.id}" style="text-decoration:none;color:inherit">
+          <h4>${event.title}</h4>
+        </a>
         <div class="e-meta">
           <span>${getCategoryEmoji(cat)} ${event.communities?.name || ''}</span>
           ${event.time ? `<span>🕐 ${event.time}</span>` : ''}
