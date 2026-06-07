@@ -130,7 +130,7 @@
     /* How it works */
     .how-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       gap: 24px;
     }
     .how-step {
@@ -153,6 +153,14 @@
     }
     .how-step h4 { margin-bottom: 8px; font-size: 1rem; }
     .how-step p { font-size: 0.85rem; }
+    .how-footnote {
+      text-align: center;
+      max-width: 600px;
+      margin: 40px auto 0;
+      font-size: 0.88rem;
+      line-height: 1.8;
+      color: #6B6860;
+    }
 
     /* Organiser section */
     .org-section {
@@ -249,9 +257,10 @@
     [data-reveal-delay="2"] { transition-delay: 0.2s; }
     [data-reveal-delay="3"] { transition-delay: 0.3s; }
     [data-reveal-delay="4"] { transition-delay: 0.4s; }
+    [data-reveal-delay="5"] { transition-delay: 0.5s; }
 
     @media (max-width: 900px) {
-      .how-grid { grid-template-columns: repeat(2, 1fr); }
+      .how-grid { grid-template-columns: repeat(3, 1fr); }
       .org-inner { grid-template-columns: 1fr; }
       .floating-pills { display: none; }
       .testimonials-grid { grid-template-columns: 1fr; }
@@ -455,7 +464,7 @@
 <section class="section">
   <div class="section-header" data-reveal style="text-align:center">
     <div class="section-eyebrow">How it works</div>
-    <h2>From stranger to circle in 4 steps</h2>
+    <h2>From stranger to circle in 5 steps</h2>
   </div>
   <div class="how-grid">
     <div class="how-step" data-reveal data-reveal-delay="1">
@@ -465,20 +474,30 @@
     </div>
     <div class="how-step" data-reveal data-reveal-delay="2">
       <div class="how-step-num">2</div>
-      <h4>Discover communities</h4>
-      <p>Browse vetted circles filtered by category, vibe, and who they're for.</p>
+      <h4>Discover your people</h4>
+      <p>Browse vetted communities filtered by category, vibe, and who they're for.</p>
     </div>
     <div class="how-step" data-reveal data-reveal-delay="3">
       <div class="how-step-num">3</div>
-      <h4>Join & connect</h4>
-      <p>Hit join to get into the WhatsApp group and start meeting people.</p>
+      <h4>Follow and stay in the loop</h4>
+      <p>Hit follow to get notified about upcoming events. RSVP when something catches your eye.</p>
     </div>
     <div class="how-step" data-reveal data-reveal-delay="4">
       <div class="how-step-num">4</div>
       <h4>Show up IRL</h4>
-      <p>RSVP to events, attend meetups, and build friendships that last.</p>
+      <p>Attend the event, come as you are, and see if these are your kind of people.</p>
+    </div>
+    <div class="how-step" data-reveal data-reveal-delay="5">
+      <div class="how-step-num">5</div>
+      <h4>Keep showing up</h4>
+      <p>Real friendships don't happen overnight. Keep attending, keep meeting people. The anxiety gets smaller each time. The connections get deeper.</p>
     </div>
   </div>
+  <p class="how-footnote" data-reveal>
+    Some people find their circle on the very first event. Others take a few tries — and that's completely fine.
+    Every event you show up to builds something. Confidence. Familiarity. A face you recognise across the room.
+    If you've found your people — beautiful. If you're still exploring — that's the whole point.
+  </p>
 </section>
 
 <!-- ── Manifesto Section ─────────────────────────────────────── -->
