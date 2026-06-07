@@ -306,6 +306,61 @@ app.get('/api/organiser/events/:id/attendees', requireAuth, async (req, res) => 
   }
 });
 
+// ─── Community Submission ─────────────────────────────────────────────────────
+app.post('/api/communities/submit', requireAuth, async (req, res) => {
+  try {
+    const { name, description, category, who_its_for, whatsapp_link, instagram_link } = req.body;
+    if (!name || !description || !category) {
+      return res.status(400).json({ error: 'name, description and category are required' });
+    }
+    const valid = ['active','creative','career','wellness','social'];
+    if (!valid.includes(category)) return res.status(400).json({ error: 'Invalid category' });
+
+    const { data, error } = await supabase.from('communities').insert({
+      name, description, category,
+      who_its_for: who_its_for || null,
+      whatsapp_link: whatsapp_link || null,
+      instagram_link: instagram_link || null,
+      organiser_id: req.user.id,
+      status: 'pending'
+    }).select().single();
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ community: data });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── Organiser: Create Event ──────────────────────────────────────────────────
+app.post('/api/organiser/events', requireAuth, async (req, res) => {
+  try {
+    const { community_id, title, description, date, time, location, capacity, price_rm } = req.body;
+    if (!community_id || !title || !date) {
+      return res.status(400).json({ error: 'community_id, title and date are required' });
+    }
+    // Verify organiser owns this community
+    const { data: community } = await supabase.from('communities')
+      .select('organiser_id').eq('id', community_id).single();
+    if (!community || community.organiser_id !== req.user.id) {
+      return res.status(403).json({ error: 'You do not own this community' });
+    }
+
+    const { data, error } = await supabase.from('events').insert({
+      community_id, title, description: description || null,
+      date, time: time || null, location: location || null,
+      capacity: capacity ? parseInt(capacity) : null,
+      price_rm: price_rm ? parseInt(price_rm) : 0,
+      organiser_id: req.user.id
+    }).select().single();
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ event: data });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ─── Admin ────────────────────────────────────────────────────────────────────
 app.get('/api/admin/stats', async (req, res) => {
   const key = req.query.key || req.headers['x-admin-key'];
@@ -351,6 +406,42 @@ app.get('/api/admin/stats', async (req, res) => {
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
+});
+
+app.get('/api/admin/pending', async (req, res) => {
+  const key = req.query.key || req.headers['x-admin-key'];
+  if (!key || key !== process.env.ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
+  try {
+    const { data, error } = await supabase.from('communities')
+      .select('*, users(name, email)')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true });
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ communities: data || [] });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/communities/:id/approve', async (req, res) => {
+  const key = req.query.key || req.headers['x-admin-key'];
+  if (!key || key !== process.env.ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
+  try {
+    const { error } = await supabase.from('communities')
+      .update({ status: 'approved' }).eq('id', req.params.id);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/communities/:id/reject', async (req, res) => {
+  const key = req.query.key || req.headers['x-admin-key'];
+  if (!key || key !== process.env.ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
+  try {
+    const { reason } = req.body;
+    const { error } = await supabase.from('communities')
+      .update({ status: 'rejected', reject_reason: reason || null }).eq('id', req.params.id);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // ─── SPA Fallback ─────────────────────────────────────────────────────────────
