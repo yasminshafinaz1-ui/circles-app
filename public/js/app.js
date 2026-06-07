@@ -168,23 +168,26 @@ function renderEventRow(event, userRsvpMap = {}) {
   }
 
   return `
-    <div class="e-row e-row-${cat}" data-id="${event.id}" data-category="${cat}">
-      <a href="/event.html?id=${event.id}" class="e-date-box" style="text-decoration:none">
-        <div class="e-date-day" style="color:${getCategoryColor(cat)}">${day}</div>
-        <div class="e-date-mon">${mon}</div>
-      </a>
-      <div class="e-info">
+    <div class="e-row" data-id="${event.id}" data-category="${cat}">
+      <div class="e-card-top">
+        <a href="/event.html?id=${event.id}" class="e-date-box" style="text-decoration:none">
+          <div class="e-date-day" style="color:${getCategoryColor(cat)}">${day}</div>
+          <div class="e-date-mon">${mon}</div>
+        </a>
+        <span class="c-card-cat badge-${cat}">${getCategoryEmoji(cat)} ${getCategoryLabel(cat)}</span>
+      </div>
+      <div class="e-card-body">
         <a href="/event.html?id=${event.id}" style="text-decoration:none;color:inherit">
           <h4>${event.title}</h4>
         </a>
-        <div class="e-meta">
-          <span>${getCategoryEmoji(cat)} ${event.communities?.name || ''}</span>
-          ${event.time ? `<span>🕐 ${event.time}</span>` : ''}
-          ${event.location ? `<span>📍 ${event.location}</span>` : ''}
-          ${event.capacity ? `<span>👥 ${event.rsvp_count || 0}/${event.capacity}</span>` : ''}
-        </div>
+        ${event.communities?.name ? `<div class="e-card-community">${event.communities.name}</div>` : ''}
       </div>
-      <div class="e-right">
+      <div class="e-card-details">
+        ${event.time ? `<span>🕐 ${event.time}</span>` : ''}
+        ${event.location ? `<span>📍 ${event.location}</span>` : ''}
+        ${event.capacity ? `<span>👥 ${event.rsvp_count || 0}/${event.capacity} spots</span>` : ''}
+      </div>
+      <div class="e-card-footer">
         <span class="e-price ${price === 'FREE' ? 'free' : ''}">${price}</span>
         ${btnHtml}
       </div>

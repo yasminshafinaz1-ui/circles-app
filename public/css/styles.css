@@ -218,39 +218,77 @@ p { color: var(--ink-light); font-weight: 400; }
 .c-card-footer { padding: 12px 24px 20px; }
 .c-card-footer .btn { width: 100%; }
 
-/* Event Row */
+/* Event Card */
 .e-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 18px 24px;
   background: var(--white);
-  border-radius: 20px;
+  border-radius: var(--radius-card);
   border: 2px solid var(--border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   transition: transform var(--transition), box-shadow var(--transition);
 }
-.e-row:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.e-row:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+
+.e-card-top {
+  padding: 20px 24px 14px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
 .e-date-box {
-  min-width: 52px;
   text-align: center;
   background: var(--offwhite);
   border-radius: 14px;
-  padding: 8px 6px;
+  padding: 8px 12px;
   border: 1.5px solid var(--border);
+  flex-shrink: 0;
 }
-.e-date-day { font-family: 'Fraunces', serif; font-weight: 900; font-size: 1.4rem; line-height: 1; color: var(--ink); }
-.e-date-mon { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-light); margin-top: 2px; }
-.e-info { flex: 1; min-width: 0; }
-.e-info h4 { font-size: 0.95rem; margin-bottom: 3px; white-space: normal; overflow: visible; }
-.e-meta { font-size: 0.78rem; color: var(--ink-light); font-weight: 600; flex-wrap: wrap; white-space: normal; }
+.e-date-day { font-family: 'Fraunces', serif; font-weight: 900; font-size: 1.5rem; line-height: 1; color: var(--ink); }
+.e-date-mon { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-light); margin-top: 3px; }
+
+.e-card-body { padding: 0 24px 14px; }
+.e-card-body h4 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+  white-space: normal;
+  overflow: visible;
+  line-height: 1.35;
+}
+.e-card-community { font-size: 0.82rem; color: var(--ink-light); font-weight: 600; }
+
+.e-card-details {
+  padding: 12px 24px;
+  border-top: 1.5px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.e-card-details span { font-size: 0.82rem; color: var(--ink-light); font-weight: 600; }
+
+.e-card-footer {
+  padding: 12px 24px 20px;
+  border-top: 1.5px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
 .e-price {
-  font-size: 0.85rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 800;
   color: var(--ink);
   white-space: nowrap;
 }
-.e-price.free { color: var(--wellness); }
+.e-price.free { font-family: 'Nunito', sans-serif; color: var(--wellness); }
 .e-rsvp-btn { flex-shrink: 0; }
+
+/* legacy compat — keep .e-info for any old references */
+.e-info { flex: 1; min-width: 0; }
+.e-info h4 { font-size: 0.95rem; margin-bottom: 3px; white-space: normal; overflow: visible; }
+.e-meta { font-size: 0.78rem; color: var(--ink-light); font-weight: 600; flex-wrap: wrap; white-space: normal; }
 
 /* ── Category Pills (filter strip) ────────────────────────── */
 .cat-strip {

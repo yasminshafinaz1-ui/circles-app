@@ -16,43 +16,7 @@
     .main-content { padding: 36px max(20px, calc((100vw - 1200px)/2)) 80px; }
     .results-count { font-size: 0.85rem; font-weight: 700; color: var(--ink-light); margin-bottom: 20px; }
 
-    /* Event rows */
-    .e-row {
-      display: grid;
-      grid-template-columns: 64px 1fr auto;
-      gap: 16px;
-      align-items: center;
-      background: var(--offwhite);
-      border-radius: 20px;
-      padding: 18px 20px;
-      border: 2px solid transparent;
-      margin-bottom: 10px;
-      transition: background 0.2s, border-color 0.2s, transform 0.2s;
-      cursor: default;
-    }
-    .e-row:hover { background: var(--white); transform: translateX(4px); }
-    .e-row-active:hover   { border-color: var(--active); }
-    .e-row-creative:hover { border-color: var(--creative); }
-    .e-row-career:hover   { border-color: var(--career); }
-    .e-row-wellness:hover { border-color: var(--wellness); }
-    .e-row-social:hover   { border-color: var(--social); }
-
-    .e-date-box { text-align: center; }
-    .e-date-day { font-family: 'Fraunces', serif; font-size: 1.8rem; font-weight: 900; line-height: 1; }
-    .e-date-mon { font-size: 0.7rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--ink-light); margin-top: 2px; }
-
-    .e-info h4 { font-size: 1rem; margin-bottom: 6px; }
-    .e-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.8rem; font-weight: 700; color: var(--ink-light); }
-
-    .e-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
-    .e-price { font-family: 'Fraunces', serif; font-size: 1.1rem; font-weight: 900; }
-    .e-price.free { font-family: 'Nunito', sans-serif; font-size: 0.85rem; font-weight: 800; color: var(--wellness); }
     .btn-going { background: var(--mint) !important; color: var(--ink) !important; }
-
-    @media(max-width:600px) {
-      .e-row { grid-template-columns: 50px 1fr; }
-      .e-right { grid-column: 2; flex-direction: row; align-items: center; justify-content: flex-start; }
-    }
   </style>
 </head>
 <body>
@@ -88,7 +52,7 @@
 
   <div class="main-content">
     <div class="results-count" id="results-count"></div>
-    <div id="events-list"><div class="spinner"></div></div>
+    <div class="grid-3" id="events-list"><div style="grid-column:1/-1;text-align:center;padding:40px"><div class="spinner"></div></div></div>
   </div>
 </div>
 
