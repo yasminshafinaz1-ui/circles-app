@@ -7,9 +7,8 @@ const { createClient } = require('@supabase/supabase-js');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Supabase admin client (service key)
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://placeholder.supabase.co';
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || 'placeholder-service-key';
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || '';
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 app.use(cors());
@@ -29,18 +28,6 @@ async function requireAuth(req, res, next) {
   next();
 }
 
-async function requireOrganiser(req, res, next) {
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', req.user.id)
-    .single();
-  if (!profile || (profile.role !== 'organiser' && profile.role !== 'admin')) {
-    return res.status(403).json({ error: 'Organiser access required' });
-  }
-  next();
-}
-
 // ─── Config ──────────────────────────────────────────────────────────────────
 app.get('/api/config', (req, res) => {
   res.json({
@@ -54,8 +41,8 @@ app.get('/api/communities', async (req, res) => {
   try {
     let query = supabase
       .from('communities')
-      .select('*, community_members(count)')
-      .eq('is_vetted', true)
+      .select('*, memberships(count)')
+      .eq('status', 'approved')
       .order('created_at', { ascending: false });
 
     if (req.query.category) {
@@ -65,9 +52,9 @@ app.get('/api/communities', async (req, res) => {
     const { data, error } = await query;
     if (error) return res.status(500).json({ error: error.message });
 
-    const communities = data.map(c => ({
+    const communities = (data || []).map(c => ({
       ...c,
-      member_count: c.community_members?.[0]?.count || 0
+      member_count: c.memberships?.[0]?.count || 0
     }));
 
     res.json({ communities });
@@ -80,7 +67,7 @@ app.get('/api/communities/:id', async (req, res) => {
   try {
     const { data: community, error } = await supabase
       .from('communities')
-      .select('*, community_members(count)')
+      .select('*, memberships(count)')
       .eq('id', req.params.id)
       .single();
 
@@ -96,7 +83,7 @@ app.get('/api/communities/:id', async (req, res) => {
     res.json({
       community: {
         ...community,
-        member_count: community.community_members?.[0]?.count || 0
+        member_count: community.memberships?.[0]?.count || 0
       },
       events: (events || []).map(e => ({
         ...e,
@@ -119,7 +106,7 @@ app.post('/api/communities/:id/join', requireAuth, async (req, res) => {
     if (!community) return res.status(404).json({ error: 'Community not found' });
 
     const { error } = await supabase
-      .from('community_members')
+      .from('memberships')
       .insert({ community_id: req.params.id, user_id: req.user.id });
 
     if (error && error.code !== '23505') {
@@ -127,6 +114,21 @@ app.post('/api/communities/:id/join', requireAuth, async (req, res) => {
     }
 
     res.json({ success: true, whatsapp_link: community.whatsapp_link });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.delete('/api/communities/:id/join', requireAuth, async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from('memberships')
+      .delete()
+      .eq('community_id', req.params.id)
+      .eq('user_id', req.user.id);
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -141,9 +143,6 @@ app.get('/api/events', async (req, res) => {
       .gte('date', new Date().toISOString().split('T')[0])
       .order('date', { ascending: true });
 
-    if (req.query.category) {
-      query = query.eq('communities.category', req.query.category);
-    }
     if (req.query.community_id) {
       query = query.eq('community_id', req.query.community_id);
     }
@@ -166,18 +165,13 @@ app.get('/api/events/:id', async (req, res) => {
   try {
     const { data: event, error } = await supabase
       .from('events')
-      .select('*, communities(name, category, cover_emoji, organiser_id), rsvps(count)')
+      .select('*, communities(name, category, cover_emoji), rsvps(count)')
       .eq('id', req.params.id)
       .single();
 
     if (error || !event) return res.status(404).json({ error: 'Event not found' });
 
-    res.json({
-      event: {
-        ...event,
-        rsvp_count: event.rsvps?.[0]?.count || 0
-      }
-    });
+    res.json({ event: { ...event, rsvp_count: event.rsvps?.[0]?.count || 0 } });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -193,7 +187,6 @@ app.post('/api/events/:id/rsvp', requireAuth, async (req, res) => {
 
     if (!event) return res.status(404).json({ error: 'Event not found' });
 
-    // Check current RSVP count
     let status = 'attending';
     if (event.capacity) {
       const { count } = await supabase
@@ -209,7 +202,7 @@ app.post('/api/events/:id/rsvp', requireAuth, async (req, res) => {
       .from('rsvps')
       .upsert(
         { event_id: req.params.id, user_id: req.user.id, status },
-        { onConflict: 'event_id,user_id' }
+        { onConflict: 'user_id,event_id' }
       )
       .select()
       .single();
@@ -241,36 +234,21 @@ app.get('/api/dashboard', requireAuth, async (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
 
-    const [commRes, upcomingRes, pastRes] = await Promise.all([
-      supabase
-        .from('community_members')
-        .select('communities(*)')
-        .eq('user_id', req.user.id),
-      supabase
-        .from('rsvps')
-        .select('*, events(*, communities(name, category, cover_emoji))')
-        .eq('user_id', req.user.id)
-        .in('status', ['attending', 'waitlist'])
-        .gte('events.date', today),
-      supabase
-        .from('rsvps')
-        .select('*, events(*, communities(name, category, cover_emoji))')
-        .eq('user_id', req.user.id)
-        .eq('status', 'attending')
-        .lt('events.date', today)
+    const [userRes, commRes, upcomingRes, pastRes] = await Promise.all([
+      supabase.from('users').select('name, email, age, interests, instagram').eq('id', req.user.id).single(),
+      supabase.from('memberships').select('communities(*)').eq('user_id', req.user.id),
+      supabase.from('rsvps').select('*, events(*, communities(name, category, cover_emoji))').eq('user_id', req.user.id).in('status', ['attending', 'waitlist']),
+      supabase.from('rsvps').select('*, events(*, communities(name, category, cover_emoji))').eq('user_id', req.user.id).eq('status', 'attending')
     ]);
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('name, email, interests')
-      .eq('id', req.user.id)
-      .single();
+    const upcoming = (upcomingRes.data || []).filter(r => r.events && r.events.date >= today);
+    const past = (pastRes.data || []).filter(r => r.events && r.events.date < today);
 
     res.json({
-      profile,
+      user: userRes.data,
       communities: (commRes.data || []).map(m => m.communities).filter(Boolean),
-      upcoming_rsvps: (upcomingRes.data || []).filter(r => r.events),
-      past_events: (pastRes.data || []).filter(r => r.events)
+      upcoming_rsvps: upcoming,
+      past_events: past
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -278,45 +256,33 @@ app.get('/api/dashboard', requireAuth, async (req, res) => {
 });
 
 // ─── Organiser Dashboard ──────────────────────────────────────────────────────
-app.get('/api/organiser/dashboard', requireAuth, requireOrganiser, async (req, res) => {
+app.get('/api/organiser/dashboard', requireAuth, async (req, res) => {
   try {
     const { data: communities } = await supabase
       .from('communities')
-      .select('*, community_members(count)')
+      .select('*, memberships(count)')
       .eq('organiser_id', req.user.id);
 
     const communityIds = (communities || []).map(c => c.id);
+    const safeIds = communityIds.length ? communityIds : ['00000000-0000-0000-0000-000000000000'];
 
-    const { data: events } = await supabase
-      .from('events')
-      .select('*, rsvps(count)')
-      .in('community_id', communityIds.length ? communityIds : ['00000000-0000-0000-0000-000000000000'])
-      .order('date', { ascending: true });
-
-    const { data: members } = await supabase
-      .from('community_members')
-      .select('*, profiles(name, email, instagram_handle)')
-      .in('community_id', communityIds.length ? communityIds : ['00000000-0000-0000-0000-000000000000']);
+    const [eventsRes, membersRes] = await Promise.all([
+      supabase.from('events').select('*, rsvps(count)').in('community_id', safeIds).order('date', { ascending: true }),
+      supabase.from('memberships').select('*, users(name, email, instagram)').in('community_id', safeIds)
+    ]);
 
     res.json({
-      communities: (communities || []).map(c => ({
-        ...c,
-        member_count: c.community_members?.[0]?.count || 0
-      })),
-      events: (events || []).map(e => ({
-        ...e,
-        rsvp_count: e.rsvps?.[0]?.count || 0
-      })),
-      members: members || []
+      communities: (communities || []).map(c => ({ ...c, member_count: c.memberships?.[0]?.count || 0 })),
+      events: (eventsRes.data || []).map(e => ({ ...e, rsvp_count: e.rsvps?.[0]?.count || 0 })),
+      members: membersRes.data || []
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-app.get('/api/organiser/events/:id/attendees', requireAuth, requireOrganiser, async (req, res) => {
+app.get('/api/organiser/events/:id/attendees', requireAuth, async (req, res) => {
   try {
-    // Verify organiser owns this event's community
     const { data: event } = await supabase
       .from('events')
       .select('*, communities(organiser_id)')
@@ -330,7 +296,7 @@ app.get('/api/organiser/events/:id/attendees', requireAuth, requireOrganiser, as
 
     const { data: attendees } = await supabase
       .from('rsvps')
-      .select('*, profiles(name, email, instagram_handle)')
+      .select('*, users(name, email, instagram)')
       .eq('event_id', req.params.id)
       .neq('status', 'cancelled');
 
@@ -350,32 +316,22 @@ app.get('/api/admin/stats', async (req, res) => {
   try {
     const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-    // New users who joined at least 1 community this week (north star)
     const { data: newJoiners } = await supabase
-      .from('community_members')
+      .from('memberships')
       .select('user_id')
       .gte('joined_at', oneWeekAgo);
 
     const uniqueNewJoiners = new Set((newJoiners || []).map(j => j.user_id)).size;
 
-    // Weekly breakdown (last 8 weeks)
     const weeks = [];
     for (let i = 7; i >= 0; i--) {
       const start = new Date(Date.now() - (i + 1) * 7 * 24 * 60 * 60 * 1000).toISOString();
       const end = new Date(Date.now() - i * 7 * 24 * 60 * 60 * 1000).toISOString();
-      const { data } = await supabase
-        .from('community_members')
-        .select('user_id')
-        .gte('joined_at', start)
-        .lt('joined_at', end);
-      const unique = new Set((data || []).map(j => j.user_id)).size;
-      weeks.push({ week_start: start.split('T')[0], new_joiners: unique });
+      const { data } = await supabase.from('memberships').select('user_id').gte('joined_at', start).lt('joined_at', end);
+      weeks.push({ week_start: start.split('T')[0], new_joiners: new Set((data || []).map(j => j.user_id)).size });
     }
 
-    // Total active users
-    const { data: activeUsers } = await supabase
-      .from('community_members')
-      .select('user_id');
+    const { data: activeUsers } = await supabase.from('memberships').select('user_id');
     const totalActiveUsers = new Set((activeUsers || []).map(u => u.user_id)).size;
 
     const [{ count: totalCommunities }, { count: totalEvents }, { count: totalRsvps }] = await Promise.all([
