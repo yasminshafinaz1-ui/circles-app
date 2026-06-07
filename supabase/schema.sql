@@ -39,7 +39,9 @@ create table public.communities (
   cover_emoji text default '🌟',
   who_its_for text,
   whatsapp_link text,
+  instagram_link text,
   status text default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  reject_reason text,
   organiser_id uuid references public.users(id),
   created_at timestamptz default now()
 );
