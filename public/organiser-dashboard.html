@@ -112,12 +112,24 @@
         <td>${c.member_count || 0}</td>
         <td>${c.follower_count || 0}</td>
         <td><span class="status-pill status-${c.status}">${c.status}</span></td>
+        <td>
+          ${c.cover_photo
+            ? `<img src="${c.cover_photo}" style="width:48px;height:36px;object-fit:cover;border-radius:6px;border:1.5px solid var(--border);display:block" />`
+            : `<span style="font-size:0.75rem;color:var(--ink-light)">No photo</span>`}
+        </td>
+        <td>
+          <label class="btn btn-secondary btn-sm" style="cursor:pointer;margin:0">
+            Upload
+            <input type="file" accept="image/jpeg,image/png" style="display:none"
+              onchange="uploadCoverPhoto('${c.id}', this)" />
+          </label>
+        </td>
       </tr>`).join('');
 
     const communitiesHtml = communities.length
       ? `<div class="table-wrap">
           <table class="data-table">
-            <thead><tr><th>Community</th><th>Category</th><th>Members 🔓</th><th>Followers</th><th>Status</th></tr></thead>
+            <thead><tr><th>Community</th><th>Category</th><th>Members 🔓</th><th>Followers</th><th>Status</th><th>Cover</th><th></th></tr></thead>
             <tbody>${communityRows}</tbody>
           </table>
         </div>`
@@ -350,6 +362,86 @@
       showToast(err.message || 'Could not mark attended.', 'error');
       if (btn) { btn.disabled = false; btn.textContent = 'Mark Attended'; }
     }
+  }
+
+  // ── Cover Photo Upload ────────────────────────────────────────
+  async function uploadCoverPhoto(communityId, input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      showToast('Only JPG and PNG files are allowed.', 'error');
+      input.value = '';
+      return;
+    }
+
+    const label = input.closest('label');
+    const origText = label.childNodes[0].textContent.trim();
+    label.childNodes[0].textContent = 'Uploading…';
+
+    try {
+      // Resize + compress with Canvas
+      const compressed = await resizeImage(file, 1200, 0.82);
+
+      const sb = await initSupabaseClient();
+      if (!sb) throw new Error('Storage unavailable');
+
+      const ext = 'jpg';
+      const path = `${communityId}_cover.${ext}`;
+
+      const { error: upErr } = await sb.storage
+        .from('community-covers')
+        .upload(path, compressed, { contentType: 'image/jpeg', upsert: true });
+
+      if (upErr) throw upErr;
+
+      const { data: { publicUrl } } = sb.storage
+        .from('community-covers')
+        .getPublicUrl(path);
+
+      // Bust cache with timestamp param
+      const finalUrl = publicUrl + '?t=' + Date.now();
+
+      await api(`/api/organiser/communities/${communityId}/cover`, {
+        method: 'POST',
+        body: JSON.stringify({ cover_url: finalUrl })
+      });
+
+      showToast('Cover photo updated! It will appear on your community page within a few seconds. 🎉', 'success');
+      loadOrgDashboard();
+    } catch (err) {
+      showToast(err.message || 'Upload failed. Try again.', 'error');
+      label.childNodes[0].textContent = origText;
+      input.value = '';
+    }
+  }
+
+  function resizeImage(file, maxWidth, quality) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const scale = img.width > maxWidth ? maxWidth / img.width : 1;
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob(blob => {
+          if (!blob) return reject(new Error('Could not compress image'));
+          // If still > 800KB, reduce quality further
+          if (blob.size > 800 * 1024) {
+            canvas.toBlob(b2 => resolve(b2 || blob), 'image/jpeg', 0.65);
+          } else {
+            resolve(blob);
+          }
+        }, 'image/jpeg', quality);
+      };
+      img.onerror = () => reject(new Error('Could not read image'));
+      img.src = url;
+    });
   }
 
   loadOrgDashboard();

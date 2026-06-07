@@ -202,6 +202,59 @@ p { color: var(--ink-light); font-weight: 400; }
 .c-card-cat.career   { background: #D6EEFF; color: var(--career); }
 .c-card-cat.wellness { background: var(--mint); color: var(--wellness); }
 .c-card-cat.social   { background: var(--peach); color: var(--social); }
+/* Community card — cover photo mode */
+.c-card-photo {
+  position: relative;
+  height: 200px;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--offwhite);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 14px 16px;
+  overflow: hidden;
+}
+.c-card-photo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.65) 100%);
+  pointer-events: none;
+}
+.c-card-cat-photo {
+  position: relative;
+  z-index: 1;
+  background: rgba(0,0,0,0.45) !important;
+  color: white !important;
+  align-self: flex-end;
+}
+.c-card-photo-bottom {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+}
+.c-card-photo-name {
+  font-family: 'Fraunces', serif;
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: white;
+  line-height: 1.2;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+.c-card-photo-count {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.85);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .c-card-body { padding: 0 24px 16px; flex: 1; }
 .c-card-body h3 { font-size: 1.1rem; margin-bottom: 6px; }
 .c-card-body p { font-size: 0.88rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
