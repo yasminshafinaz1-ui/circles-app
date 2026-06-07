@@ -9,17 +9,54 @@
     .page-hero {
       background: var(--white);
       border-bottom: 2px solid var(--border);
-      padding: 60px max(20px, calc((100vw - 1200px)/2)) 40px;
+      padding: 56px max(20px, calc((100vw - 1200px)/2)) 36px;
     }
-    .page-hero h1 { margin-bottom: 10px; }
-    .page-hero p { font-size: 1.05rem; margin-bottom: 28px; max-width: 520px; }
-    .main-content { padding: 36px max(20px, calc((100vw - 1200px)/2)); }
-    .results-count { font-size: 0.85rem; font-weight: 700; color: var(--ink-light); margin-bottom: 16px; }
+    .page-hero h1 { margin-bottom: 8px; }
+    .page-hero p { font-size: 1rem; color: var(--ink-light); margin-bottom: 28px; max-width: 520px; }
+    .main-content { padding: 36px max(20px, calc((100vw - 1200px)/2)) 80px; }
+    .results-count { font-size: 0.85rem; font-weight: 700; color: var(--ink-light); margin-bottom: 20px; }
+
+    /* Event rows */
+    .e-row {
+      display: grid;
+      grid-template-columns: 64px 1fr auto;
+      gap: 16px;
+      align-items: center;
+      background: var(--offwhite);
+      border-radius: 20px;
+      padding: 18px 20px;
+      border: 2px solid transparent;
+      margin-bottom: 10px;
+      transition: background 0.2s, border-color 0.2s, transform 0.2s;
+      cursor: default;
+    }
+    .e-row:hover { background: var(--white); transform: translateX(4px); }
+    .e-row-active:hover   { border-color: var(--active); }
+    .e-row-creative:hover { border-color: var(--creative); }
+    .e-row-career:hover   { border-color: var(--career); }
+    .e-row-wellness:hover { border-color: var(--wellness); }
+    .e-row-social:hover   { border-color: var(--social); }
+
+    .e-date-box { text-align: center; }
+    .e-date-day { font-family: 'Fraunces', serif; font-size: 1.8rem; font-weight: 900; line-height: 1; }
+    .e-date-mon { font-size: 0.7rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--ink-light); margin-top: 2px; }
+
+    .e-info h4 { font-size: 1rem; margin-bottom: 6px; }
+    .e-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.8rem; font-weight: 700; color: var(--ink-light); }
+
+    .e-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+    .e-price { font-family: 'Fraunces', serif; font-size: 1.1rem; font-weight: 900; }
+    .e-price.free { font-family: 'Nunito', sans-serif; font-size: 0.85rem; font-weight: 800; color: var(--wellness); }
+    .btn-going { background: var(--mint) !important; color: var(--ink) !important; }
+
+    @media(max-width:600px) {
+      .e-row { grid-template-columns: 50px 1fr; }
+      .e-right { grid-column: 2; flex-direction: row; align-items: center; justify-content: flex-start; }
+    }
   </style>
 </head>
 <body>
 
-<!-- Nav -->
 <nav class="nav">
   <div class="nav-inner">
     <a href="/" class="nav-logo"><span class="nav-logo-dot"></span>Circles</a>
@@ -35,26 +72,23 @@
 </nav>
 
 <div class="pt-nav">
-  <!-- Hero -->
   <div class="page-hero">
-    <h1>What's on this week in KL & PJ</h1>
-    <p>Upcoming events from all circles. RSVP to save your spot.</p>
+    <p class="section-label" style="color:var(--career);margin-bottom:8px">KL & PJ · Upcoming Events</p>
+    <h1>Don't waste the weekend lah</h1>
+    <p>Events from vetted communities. RSVP to lock in your spot.</p>
     <div class="cat-strip" id="cat-filter">
-      <button class="cat-pill active" data-cat="all">🏠 All</button>
-      <button class="cat-pill active-cat" data-cat="active">🏃 Active & Outdoors</button>
-      <button class="cat-pill creative-cat" data-cat="creative">🎨 Creative</button>
-      <button class="cat-pill career-cat" data-cat="career">🚀 Career & Hustle</button>
-      <button class="cat-pill wellness-cat" data-cat="wellness">🌸 Wellness</button>
-      <button class="cat-pill social-cat" data-cat="social">💛 Social & Friendship</button>
+      <button class="cat-pill active" data-cat="all">✨ All</button>
+      <button class="cat-pill" data-cat="active" style="--c:var(--active)">🏃 Active & Outdoors</button>
+      <button class="cat-pill" data-cat="creative" style="--c:var(--creative)">🎨 Creative</button>
+      <button class="cat-pill" data-cat="career" style="--c:var(--career)">🚀 Career & Hustle</button>
+      <button class="cat-pill" data-cat="wellness" style="--c:var(--wellness)">🌸 Wellness</button>
+      <button class="cat-pill" data-cat="social" style="--c:var(--social)">💛 Social & Friendship</button>
     </div>
   </div>
 
-  <!-- Events List -->
   <div class="main-content">
     <div class="results-count" id="results-count"></div>
-    <div class="flex-col" id="events-list">
-      <div class="spinner"></div>
-    </div>
+    <div id="events-list"><div class="spinner"></div></div>
   </div>
 </div>
 
@@ -72,52 +106,41 @@
       const data = await api('/api/events');
       allEvents = data.events || [];
 
-      // Load user's RSVPs
       const session = await getSession();
       if (session) {
         const sb = await initSupabaseClient();
         if (sb) {
-          const { data: rsvps } = await sb
-            .from('rsvps')
-            .select('event_id, status')
-            .eq('user_id', session.user.id)
-            .neq('status', 'cancelled');
-          (rsvps || []).forEach(r => { userRsvpMap[r.event_id] = r.status; });
+          const { data: rsvps } = await sb.from('rsvps')
+            .select('event_id,status').eq('user_id', session.user.id).neq('status','cancelled');
+          (rsvps||[]).forEach(r => { userRsvpMap[r.event_id] = r.status; });
         }
       }
 
       renderEvents();
     } catch (e) {
       document.getElementById('events-list').innerHTML =
-        '<div class="empty-state"><div class="empty-icon">😕</div><h3>Could not load events</h3><p>Please try again later.</p></div>';
+        `<div class="empty-state"><div class="empty-icon">😕</div><h3>Could not load events</h3><p>${e.message}</p></div>`;
     }
   }
 
   function renderEvents() {
-    let filtered = allEvents;
+    let list = allEvents;
     if (activeCategory !== 'all') {
-      filtered = filtered.filter(e => e.communities?.category === activeCategory);
+      list = list.filter(e => e.communities?.category === activeCategory);
     }
 
-    const list = document.getElementById('events-list');
-    const count = document.getElementById('results-count');
-    count.textContent = `${filtered.length} upcoming event${filtered.length === 1 ? '' : 's'}`;
+    const el = document.getElementById('events-list');
+    document.getElementById('results-count').textContent =
+      `${list.length} upcoming event${list.length === 1 ? '' : 's'}`;
 
-    if (!filtered.length) {
-      list.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-icon">📅</div>
-          <h3>No events in this category</h3>
-          <p>Try a different filter or check back soon.</p>
-        </div>`;
+    if (!list.length) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div><h3>No events in this category</h3><p>Try a different filter or check back soon.</p></div>`;
       return;
     }
-
-    list.innerHTML = filtered.map(e => renderEventRow(e, userRsvpMap)).join('');
+    el.innerHTML = list.map(e => renderEventRow(e, userRsvpMap)).join('');
   }
 
-  // Category filter
-  document.getElementById('cat-filter').addEventListener('click', (e) => {
+  document.getElementById('cat-filter').addEventListener('click', e => {
     const pill = e.target.closest('.cat-pill');
     if (!pill) return;
     document.querySelectorAll('#cat-filter .cat-pill').forEach(p => p.classList.remove('active'));
@@ -126,9 +149,8 @@
     renderEvents();
   });
 
-  // Handle ?category= param
-  const urlParams = new URLSearchParams(window.location.search);
-  const catParam = urlParams.get('category');
+  // Handle ?category= URL param
+  const catParam = new URLSearchParams(window.location.search).get('category');
   if (catParam) {
     activeCategory = catParam;
     document.querySelectorAll('#cat-filter .cat-pill').forEach(p => {

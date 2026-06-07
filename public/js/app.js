@@ -32,11 +32,9 @@ function showModal(content, title) {
     overlay.addEventListener('click', e => { if (e.target === overlay) hideModal(); });
     document.body.appendChild(overlay);
   }
-  if (title) {
-    document.getElementById('modal-content').innerHTML = `<h3 style="margin-bottom:16px;font-size:1.3rem">${title}</h3>${content}`;
-  } else {
-    document.getElementById('modal-content').innerHTML = content;
-  }
+  document.getElementById('modal-content').innerHTML = title
+    ? `<h3 style="margin-bottom:16px;font-size:1.3rem">${title}</h3>${content}`
+    : content;
   requestAnimationFrame(() => overlay.classList.add('open'));
 }
 
@@ -64,16 +62,6 @@ function formatDateShort(dateStr) {
   };
 }
 
-function formatTime(timeStr) {
-  if (!timeStr) return '';
-  const [h, m] = timeStr.split(':');
-  const hour = parseInt(h);
-  const ampm = hour >= 12 ? 'PM' : 'AM';
-  const displayHour = hour % 12 || 12;
-  return `${displayHour}:${m} ${ampm}`;
-}
-
-// ── Price Formatting ─────────────────────────────────────────
 function formatPrice(priceRm) {
   if (!priceRm || priceRm === 0) return 'FREE';
   return `RM ${priceRm}`;
@@ -101,35 +89,45 @@ const CAT_LABELS = {
   wellness: 'Wellness',
   social: 'Social & Friendship'
 };
+const CAT_BG = {
+  active: '#FFE5E5',
+  creative: '#E8D5F5',
+  career: '#D6EEFF',
+  wellness: '#C8F7C5',
+  social: '#FFE5D9'
+};
 
 function getCategoryColor(category) { return CAT_COLORS[category] || 'var(--ink)'; }
 function getCategoryEmoji(category)  { return CAT_EMOJIS[category]  || '🌟'; }
 function getCategoryLabel(category)  { return CAT_LABELS[category]  || category; }
+function getCategoryBg(category)     { return CAT_BG[category]      || '#FAFAF8'; }
 
 // ── Community Card Renderer ──────────────────────────────────
 function renderCommunityCard(community, userJoinedIds = []) {
-  const { day: _, mon: __ } = formatDateShort(community.created_at?.split('T')[0]);
   const joined = userJoinedIds.includes(community.id);
   return `
     <div class="card community-card" data-id="${community.id}" data-category="${community.category}">
-      <div class="c-card-top">
-        <span class="c-card-emoji">${community.cover_emoji || '🌟'}</span>
-        <span class="c-card-cat ${community.category}">${getCategoryLabel(community.category)}</span>
-      </div>
-      <div class="c-card-body">
-        <h3>${community.name}</h3>
-        <p>${community.description || ''}</p>
-      </div>
-      <div class="c-card-meta">
-        <span class="c-card-who">${community.who_gender || 'All genders'} · ${community.who_age_min || 18}–${community.who_age_max || 45}</span>
-        <span class="c-card-members">👥 ${community.member_count || 0}</span>
-      </div>
+      <a href="/community.html?id=${community.id}" class="c-card-link">
+        <div class="c-card-top ${community.category}-bg">
+          <span class="c-card-emoji">${community.cover_emoji || '🌟'}</span>
+          <span class="c-card-cat badge-${community.category}">${getCategoryEmoji(community.category)} ${getCategoryLabel(community.category)}</span>
+        </div>
+        <div class="c-card-body">
+          <h3>${community.name}</h3>
+          <p>${community.description || ''}</p>
+        </div>
+        <div class="c-card-meta">
+          <span class="c-card-who">${community.who_its_for || 'All welcome'}</span>
+          <span class="c-card-members">👥 ${community.member_count || 0}</span>
+        </div>
+      </a>
       <div class="c-card-footer">
         <button class="btn btn-primary ${joined ? 'btn-joined' : ''}"
           onclick="handleJoinCommunity('${community.id}', '${(community.whatsapp_link || '').replace(/'/g, '')}', this)"
           ${joined ? 'disabled' : ''}>
           ${joined ? 'Joined ✓' : 'Join →'}
         </button>
+        <a href="/community.html?id=${community.id}" class="btn btn-secondary btn-sm">View →</a>
       </div>
     </div>`;
 }
@@ -140,10 +138,11 @@ function renderEventRow(event, userRsvpMap = {}) {
   const price = formatPrice(event.price_rm);
   const rsvpStatus = userRsvpMap[event.id];
   const atCapacity = event.capacity && event.rsvp_count >= event.capacity;
+  const cat = event.communities?.category || event.category || '';
 
   let btnHtml = '';
   if (rsvpStatus === 'attending') {
-    btnHtml = `<button class="btn btn-sm" style="background:var(--mint);color:var(--ink)"
+    btnHtml = `<button class="btn btn-sm btn-going"
       onclick="handleCancelRsvp('${event.id}', this)">Going ✓ · Cancel</button>`;
   } else if (rsvpStatus === 'waitlist') {
     btnHtml = `<button class="btn btn-sm btn-secondary" disabled>Waitlisted</button>`;
@@ -156,21 +155,24 @@ function renderEventRow(event, userRsvpMap = {}) {
   }
 
   return `
-    <div class="e-row" data-id="${event.id}" data-category="${event.communities?.category || ''}">
+    <div class="e-row e-row-${cat}" data-id="${event.id}" data-category="${cat}">
       <div class="e-date-box">
-        <div class="e-date-day">${day}</div>
+        <div class="e-date-day" style="color:${getCategoryColor(cat)}">${day}</div>
         <div class="e-date-mon">${mon}</div>
       </div>
       <div class="e-info">
         <h4>${event.title}</h4>
         <div class="e-meta">
-          ${event.communities?.cover_emoji || getCategoryEmoji(event.communities?.category)} ${event.communities?.name || ''} &nbsp;·&nbsp;
-          ${formatTime(event.time_start)} &nbsp;·&nbsp; ${event.location || ''}
-          ${event.capacity ? `&nbsp;·&nbsp; ${event.rsvp_count || 0}/${event.capacity} going` : ''}
+          <span>${getCategoryEmoji(cat)} ${event.communities?.name || ''}</span>
+          ${event.time ? `<span>🕐 ${event.time}</span>` : ''}
+          ${event.location ? `<span>📍 ${event.location}</span>` : ''}
+          ${event.capacity ? `<span>👥 ${event.rsvp_count || 0}/${event.capacity}</span>` : ''}
         </div>
       </div>
-      <span class="e-price ${price === 'FREE' ? 'free' : ''}">${price}</span>
-      <div class="e-rsvp-btn">${btnHtml}</div>
+      <div class="e-right">
+        <span class="e-price ${price === 'FREE' ? 'free' : ''}">${price}</span>
+        ${btnHtml}
+      </div>
     </div>`;
 }
 
@@ -203,10 +205,12 @@ async function handleJoinCommunity(communityId, whatsappLink, btn) {
     showToast('You joined the community! 🎉', 'success');
     if (whatsappLink) {
       showModal(`
-        <p style="margin-bottom:20px;font-size:0.95rem">Welcome! Join the WhatsApp group to connect with your new circle.</p>
-        <a href="${whatsappLink}" target="_blank" rel="noopener" class="btn btn-accent" style="width:100%;justify-content:center">
-          Join WhatsApp Group 💬
-        </a>`, 'You\'re in! 🎉');
+        <p style="margin-bottom:20px;font-size:0.95rem;color:var(--ink-light)">Welcome! Join the WhatsApp group to connect with your new circle.</p>
+        <a href="${whatsappLink}" target="_blank" rel="noopener" class="btn btn-accent" style="width:100%;justify-content:center;display:flex">
+          💬 Join WhatsApp Group
+        </a>
+        <button onclick="hideModal()" class="btn btn-secondary" style="width:100%;margin-top:10px">Maybe later</button>`,
+        'You\'re in! 🎉');
     }
   } catch (e) {
     showToast(e.message || 'Could not join. Try again.', 'error');
@@ -227,12 +231,13 @@ async function handleRsvp(eventId, btn) {
     const status = data.rsvp?.status;
     if (status === 'waitlist') {
       btn.textContent = 'Waitlisted';
-      btn.classList.add('btn-secondary');
+      btn.className = 'btn btn-sm btn-secondary';
+      btn.disabled = true;
       showToast('Added to waitlist!', 'info');
     } else {
-      btn.style.background = 'var(--mint)';
-      btn.style.color = 'var(--ink)';
+      btn.className = 'btn btn-sm btn-going';
       btn.textContent = 'Going ✓ · Cancel';
+      btn.disabled = false;
       btn.onclick = function() { handleCancelRsvp(eventId, this); };
       showToast('RSVP confirmed! See you there 🙌', 'success');
     }
@@ -244,13 +249,14 @@ async function handleRsvp(eventId, btn) {
 }
 
 async function handleCancelRsvp(eventId, btn) {
+  if (!confirm('Cancel your RSVP?')) return;
   btn.disabled = true;
   btn.textContent = '…';
   try {
     await api(`/api/events/${eventId}/rsvp`, { method: 'DELETE' });
+    btn.className = 'btn btn-sm btn-primary';
     btn.textContent = 'RSVP';
-    btn.style.background = '';
-    btn.style.color = '';
+    btn.disabled = false;
     btn.onclick = function() { handleRsvp(eventId, this); };
     showToast('RSVP cancelled.', 'info');
   } catch (e) {
@@ -260,16 +266,13 @@ async function handleCancelRsvp(eventId, btn) {
   }
 }
 
-// ── Scroll Reveal Animation ──────────────────────────────────
+// ── Scroll Reveal ────────────────────────────────────────────
 function initScrollReveal() {
   const els = document.querySelectorAll('[data-reveal]');
   if (!els.length) return;
   const io = new IntersectionObserver((entries) => {
     entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.classList.add('revealed');
-        io.unobserve(e.target);
-      }
+      if (e.isIntersecting) { e.target.classList.add('revealed'); io.unobserve(e.target); }
     });
   }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
   els.forEach(el => io.observe(el));
