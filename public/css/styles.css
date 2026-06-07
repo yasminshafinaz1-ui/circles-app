@@ -241,8 +241,8 @@ p { color: var(--ink-light); font-weight: 400; }
 .e-date-day { font-family: 'Fraunces', serif; font-weight: 900; font-size: 1.4rem; line-height: 1; color: var(--ink); }
 .e-date-mon { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-light); margin-top: 2px; }
 .e-info { flex: 1; min-width: 0; }
-.e-info h4 { font-size: 0.95rem; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.e-meta { font-size: 0.78rem; color: var(--ink-light); font-weight: 600; }
+.e-info h4 { font-size: 0.95rem; margin-bottom: 3px; white-space: normal; overflow: visible; }
+.e-meta { font-size: 0.78rem; color: var(--ink-light); font-weight: 600; flex-wrap: wrap; white-space: normal; }
 .e-price {
   font-size: 0.85rem;
   font-weight: 700;
