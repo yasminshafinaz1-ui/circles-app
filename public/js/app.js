@@ -131,11 +131,15 @@ function renderCommunityCard(community, userMembership = null) {
         </div>
       </a>
       <div class="c-card-footer">
-        <button class="btn btn-primary ${isMember ? 'btn-joined' : isFollower ? 'btn-following' : ''}"
-          onclick="handleFollowCommunity('${community.id}', this)"
-          ${isMember ? 'disabled' : ''}>
-          ${isMember ? '✓ Member' : isFollower ? 'Following ✓' : 'Follow →'}
-        </button>
+        ${!isMember ? `
+        <div class="tooltip-wrap">
+          <button class="btn btn-primary ${isFollower ? 'btn-following' : ''}"
+            onclick="handleFollowCommunity('${community.id}', this)">
+            ${isFollower ? 'Following ✓' : 'Follow →'}
+          </button>
+          <span class="tooltip-text">Follow to see their events.<br>Show up to join the gang. 🤝</span>
+        </div>` : `
+        <button class="btn btn-primary btn-joined" disabled>✓ Member</button>`}
         <a href="/community.html?id=${community.id}" class="btn btn-secondary btn-sm">View →</a>
       </div>
     </div>`;
@@ -227,6 +231,51 @@ async function handleJoinCommunity(communityId, _unused, btn) {
   return handleFollowCommunity(communityId, btn);
 }
 
+// ── RSVP Confirmation Modal ──────────────────────────────────
+function makeGCalLink(event) {
+  const d = event.date.replace(/-/g, '');
+  const title = encodeURIComponent(event.title);
+  const loc = encodeURIComponent(event.location || '');
+  const details = encodeURIComponent(`Organised by ${event.communities?.name || 'Circles'}`);
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${d}/${d}&location=${loc}&details=${details}`;
+}
+
+function showRsvpConfirmModal(event) {
+  const communityName = event.communities?.name || 'this community';
+  const dateStr = [formatDate(event.date), event.time, event.location].filter(Boolean).join(' · ');
+  const calLink = makeGCalLink(event);
+  const mapsLink = event.location
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`
+    : null;
+
+  showModal(`
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:2.8rem;margin-bottom:10px">🙌</div>
+      <h3 style="font-size:1.35rem;margin-bottom:6px">You're going! See you there.</h3>
+    </div>
+    <div style="background:var(--offwhite);border:2px solid var(--border);border-radius:16px;padding:16px;margin-bottom:18px">
+      <div style="font-weight:800;margin-bottom:6px">${event.title}</div>
+      <div style="font-size:0.85rem;color:var(--ink-light);font-weight:600">${dateStr}</div>
+    </div>
+    <div style="background:#FFF8E7;border:2px solid #F5C842;border-radius:16px;padding:16px;margin-bottom:20px;font-size:0.88rem;line-height:1.65;color:var(--ink)">
+      Heads up — attending this event is your ticket into <strong>${communityName}</strong>'s inner circle.
+      Show up, have fun, and your group access unlocks automatically. Just like that.
+    </div>
+    <div style="display:flex;gap:10px">
+      <a href="${calLink}" target="_blank" rel="noopener"
+         class="btn btn-secondary btn-sm" style="flex:1;justify-content:center">
+        📅 Add to Calendar
+      </a>
+      ${mapsLink ? `
+      <a href="${mapsLink}" target="_blank" rel="noopener"
+         class="btn btn-secondary btn-sm" style="flex:1;justify-content:center">
+        📍 Get Directions
+      </a>` : ''}
+    </div>
+    <button onclick="hideModal()" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:10px">Done!</button>
+  `);
+}
+
 // ── RSVP Handlers ───────────────────────────────────────────
 async function handleRsvp(eventId, btn) {
   const session = await getSession();
@@ -248,6 +297,10 @@ async function handleRsvp(eventId, btn) {
       btn.disabled = false;
       btn.onclick = function() { handleCancelRsvp(eventId, this); };
       showToast('RSVP confirmed! See you there 🙌', 'success');
+      try {
+        const { event } = await api(`/api/events/${eventId}`);
+        showRsvpConfirmModal(event);
+      } catch {}
     }
   } catch (e) {
     showToast(e.message || 'Could not RSVP.', 'error');

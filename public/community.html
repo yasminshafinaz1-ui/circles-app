@@ -147,12 +147,16 @@
             </div>
           </div>
           <div class="c-hero-actions">
-            <button class="btn btn-primary btn-lg ${isMember ? 'btn-joined' : isFollower ? 'btn-following' : ''}"
-              id="follow-btn"
-              onclick="handleFollowCommunity('${community.id}', this)"
-              ${isMember ? 'disabled' : ''}>
-              ${isMember ? '✓ Member' : isFollower ? 'Following ✓' : 'Follow →'}
-            </button>
+            ${!isMember ? `
+            <div class="tooltip-wrap">
+              <button class="btn btn-primary btn-lg ${isFollower ? 'btn-following' : ''}"
+                id="follow-btn"
+                onclick="handleFollowCommunity('${community.id}', this)">
+                ${isFollower ? 'Following ✓' : 'Follow →'}
+              </button>
+              <span class="tooltip-text">Follow to see their events.<br>Show up to join the gang. 🤝</span>
+            </div>` : `
+            <button class="btn btn-primary btn-lg btn-joined" disabled>✓ Member</button>`}
             ${community.member_count > 0
               ? `<div class="member-badge">👥 ${community.member_count} member${community.member_count !== 1 ? 's' : ''}</div>`
               : ''}

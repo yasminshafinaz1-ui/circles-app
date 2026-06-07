@@ -622,6 +622,26 @@ p { color: var(--ink-light); font-weight: 400; }
   color: var(--ink);
 }
 
+/* ── Tooltip ───────────────────────────────────────────────── */
+.tooltip-wrap { position: relative; display: inline-block; }
+.tooltip-wrap .tooltip-text {
+  visibility: hidden; opacity: 0;
+  background: var(--ink); color: white;
+  font-size: 0.75rem; font-weight: 600; line-height: 1.4;
+  padding: 7px 11px; border-radius: 10px;
+  white-space: nowrap;
+  position: absolute; bottom: calc(100% + 8px); left: 50%;
+  transform: translateX(-50%);
+  transition: opacity 0.15s;
+  pointer-events: none; z-index: 20;
+}
+.tooltip-wrap .tooltip-text::after {
+  content: ''; position: absolute; top: 100%; left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent; border-top-color: var(--ink);
+}
+.tooltip-wrap:hover .tooltip-text { visibility: visible; opacity: 1; }
+
 /* ── btn-following / btn-joined ────────────────────────────── */
 .btn-following {
   background: var(--lavender);
