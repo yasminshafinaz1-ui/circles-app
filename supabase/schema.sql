@@ -64,6 +64,7 @@ create table public.rsvps (
   user_id uuid references public.users(id) on delete cascade,
   event_id uuid references public.events(id) on delete cascade,
   status text default 'attending' check (status in ('attending', 'waitlist', 'cancelled')),
+  attended boolean default false,
   created_at timestamptz default now(),
   unique(user_id, event_id)
 );
@@ -72,7 +73,9 @@ create table public.memberships (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references public.users(id) on delete cascade,
   community_id uuid references public.communities(id) on delete cascade,
+  membership_type text default 'follower' check (membership_type in ('follower', 'member')),
   joined_at timestamptz default now(),
+  upgraded_at timestamptz,
   unique(user_id, community_id)
 );
 

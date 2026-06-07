@@ -621,3 +621,19 @@ p { color: var(--ink-light); font-weight: 400; }
   background: #a8e6a8;
   color: var(--ink);
 }
+
+/* ── btn-following / btn-joined ────────────────────────────── */
+.btn-following {
+  background: var(--lavender);
+  color: var(--creative);
+  border-color: var(--creative);
+}
+.btn-following:hover {
+  background: #d5c0f0;
+  color: var(--creative);
+}
+.btn-joined {
+  background: var(--mint);
+  color: var(--ink);
+  cursor: default;
+}

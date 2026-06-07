@@ -133,7 +133,7 @@
 <script>
   let allCommunities = [];
   let activeCategory = 'all';
-  let joinedIds = [];
+  let membershipMap = {}; // community_id -> 'follower' | 'member'
 
   async function loadCommunities() {
     try {
@@ -144,8 +144,8 @@
       if (session) {
         const sb = await initSupabaseClient();
         if (sb) {
-          const { data: m } = await sb.from('memberships').select('community_id').eq('user_id', session.user.id);
-          joinedIds = (m || []).map(x => x.community_id);
+          const { data: m } = await sb.from('memberships').select('community_id, membership_type').eq('user_id', session.user.id);
+          (m || []).forEach(x => { membershipMap[x.community_id] = x.membership_type; });
         }
       }
 
@@ -169,7 +169,7 @@
       grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🔍</div><h3>No communities found</h3><p>Try a different category or search term.</p></div>`;
       return;
     }
-    grid.innerHTML = list.map(c => renderCommunityCard(c, joinedIds)).join('');
+    grid.innerHTML = list.map(c => renderCommunityCard(c, membershipMap[c.id] || null)).join('');
   }
 
   document.getElementById('cat-filter').addEventListener('click', e => {

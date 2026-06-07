@@ -113,15 +113,19 @@
     const name = profile?.name || 'friend';
 
     const communitiesHtml = communities.length
-      ? communities.map(c => `
+      ? communities.map(c => {
+          const isMember = c.membership_type === 'member';
+          return `
           <div class="joined-community-card">
             <div class="jc-emoji">${c.cover_emoji || '🌟'}</div>
             <div class="jc-info">
               <h4>${c.name}</h4>
-              <p>${getCategoryLabel(c.category)}</p>
+              <p>${getCategoryLabel(c.category)} · <span style="font-weight:700;color:${isMember ? 'var(--wellness)' : 'var(--creative)'}">${isMember ? '🔓 Member' : 'Following'}</span></p>
+              ${!isMember ? `<p style="font-size:0.78rem;color:var(--ink-light)">Attend an event to unlock membership</p>` : ''}
             </div>
             <a href="/community.html?id=${c.id}" class="leave-btn">View →</a>
-          </div>`).join('')
+          </div>`;
+        }).join('')
       : `<div class="empty-state">
            <div class="empty-icon">🔍</div>
            <h3>No communities yet</h3>

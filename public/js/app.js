@@ -103,8 +103,17 @@ function getCategoryLabel(category)  { return CAT_LABELS[category]  || category;
 function getCategoryBg(category)     { return CAT_BG[category]      || '#FAFAF8'; }
 
 // ── Community Card Renderer ──────────────────────────────────
-function renderCommunityCard(community, userJoinedIds = []) {
-  const joined = userJoinedIds.includes(community.id);
+function renderCommunityCard(community, userMembership = null) {
+  const isFollower = userMembership === 'follower';
+  const isMember = userMembership === 'member';
+  const memberCount = community.member_count || 0;
+  const followerCount = community.follower_count || 0;
+  const countLabel = memberCount > 0
+    ? `👥 ${memberCount} member${memberCount !== 1 ? 's' : ''}`
+    : followerCount > 0
+      ? `${followerCount} follower${followerCount !== 1 ? 's' : ''}`
+      : '';
+
   return `
     <div class="card community-card" data-id="${community.id}" data-category="${community.category}">
       <a href="/community.html?id=${community.id}" class="c-card-link">
@@ -118,14 +127,14 @@ function renderCommunityCard(community, userJoinedIds = []) {
         </div>
         <div class="c-card-meta">
           <span class="c-card-who">${community.who_its_for || 'All welcome'}</span>
-          <span class="c-card-members">👥 ${community.member_count || 0}</span>
+          <span class="c-card-members">${countLabel}</span>
         </div>
       </a>
       <div class="c-card-footer">
-        <button class="btn btn-primary ${joined ? 'btn-joined' : ''}"
-          onclick="handleJoinCommunity('${community.id}', '${(community.whatsapp_link || '').replace(/'/g, '')}', this)"
-          ${joined ? 'disabled' : ''}>
-          ${joined ? 'Joined ✓' : 'Join →'}
+        <button class="btn btn-primary ${isMember ? 'btn-joined' : isFollower ? 'btn-following' : ''}"
+          onclick="handleFollowCommunity('${community.id}', this)"
+          ${isMember ? 'disabled' : ''}>
+          ${isMember ? '✓ Member' : isFollower ? 'Following ✓' : 'Follow →'}
         </button>
         <a href="/community.html?id=${community.id}" class="btn btn-secondary btn-sm">View →</a>
       </div>
@@ -191,34 +200,31 @@ async function api(path, options = {}) {
   return data;
 }
 
-// ── Join Community Handler ───────────────────────────────────
-async function handleJoinCommunity(communityId, whatsappLink, btn) {
+// ── Follow Community Handler ─────────────────────────────────
+async function handleFollowCommunity(communityId, btn) {
   const session = await getSession();
   if (!session) {
     window.location.href = '/signup.html';
     return;
   }
   btn.disabled = true;
-  btn.textContent = 'Joining…';
+  btn.textContent = 'Following…';
   try {
-    await api(`/api/communities/${communityId}/join`, { method: 'POST' });
-    btn.textContent = 'Joined ✓';
-    btn.classList.add('btn-joined');
-    showToast('You joined the community! 🎉', 'success');
-    if (whatsappLink) {
-      showModal(`
-        <p style="margin-bottom:20px;font-size:0.95rem;color:var(--ink-light)">Welcome! Join the WhatsApp group to connect with your new circle.</p>
-        <a href="${whatsappLink}" target="_blank" rel="noopener" class="btn btn-accent" style="width:100%;justify-content:center;display:flex">
-          💬 Join WhatsApp Group
-        </a>
-        <button onclick="hideModal()" class="btn btn-secondary" style="width:100%;margin-top:10px">Maybe later</button>`,
-        'You\'re in! 🎉');
-    }
-  } catch (e) {
-    showToast(e.message || 'Could not join. Try again.', 'error');
+    await api(`/api/communities/${communityId}/follow`, { method: 'POST' });
+    btn.textContent = 'Following ✓';
+    btn.classList.add('btn-following');
     btn.disabled = false;
-    btn.textContent = 'Join →';
+    showToast('You\'re following this community! RSVP to events to earn membership. 🎉', 'success');
+  } catch (e) {
+    showToast(e.message || 'Could not follow. Try again.', 'error');
+    btn.disabled = false;
+    btn.textContent = 'Follow →';
   }
+}
+
+// Keep for backwards compat — some pages may call this
+async function handleJoinCommunity(communityId, _unused, btn) {
+  return handleFollowCommunity(communityId, btn);
 }
 
 // ── RSVP Handlers ───────────────────────────────────────────
