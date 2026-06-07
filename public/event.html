@@ -158,6 +158,7 @@
       }
 
       renderPage();
+      maybeShowReminderBanner();
     } catch (e) {
       document.getElementById('page-content').innerHTML =
         `<div class="empty-state" style="padding:80px 20px"><h3>Could not load event</h3><p>${e.message}</p><a href="/events.html">← Back to events</a></div>`;
@@ -267,7 +268,7 @@
         ${spotsLeft === null
           ? 'Unlimited spots'
           : isFull
-            ? '⚠️ Event is full — join the waitlist'
+            ? '🔥 Wah, this one popular. Join the waitlist!'
             : `<span class="spots-num">${spotsLeft}</span> spot${spotsLeft === 1 ? '' : 's'} left`
         }
       </p>
@@ -277,7 +278,7 @@
       </div>` : ''}
       <div class="rsvp-btn-wrap">
         <button class="btn btn-primary" id="rsvp-main-btn" onclick="doRsvp()">
-          ${isFull ? 'Join Waitlist' : 'RSVP — Save My Spot →'}
+          ${isFull ? 'Join Waitlist →' : 'RSVP — Save My Spot →'}
         </button>
       </div>
       <p class="rsvp-meta">Free to RSVP. Cancel any time.<br>You'll need an account to confirm.</p>
@@ -388,18 +389,40 @@
   function showWaitlistConfirmation() {
     const e = currentEvent;
     showModal(`
-      <div style="text-align:center;margin-bottom:24px">
-        <div style="font-size:3rem;margin-bottom:12px">⏳</div>
-        <h3 style="font-size:1.4rem;margin-bottom:8px">You're on the waitlist!</h3>
-        <p style="color:var(--ink-light);font-size:0.95rem">This event is full but you're next in line for <strong>${e.title}</strong>.</p>
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:2.8rem;margin-bottom:10px">🔥</div>
+        <h3 style="font-size:1.35rem;margin-bottom:6px">Wah, this one popular.</h3>
       </div>
-      <div style="background:var(--offwhite);border-radius:16px;padding:16px;margin-bottom:20px;font-size:0.88rem;font-weight:600">
-        <div style="margin-bottom:6px">📅 ${formatDate(e.date)}</div>
-        ${e.location ? `<div>📍 ${e.location}</div>` : ''}
+      <div style="background:var(--offwhite);border:2px solid var(--border);border-radius:16px;padding:16px;margin-bottom:18px">
+        <div style="font-weight:800;margin-bottom:6px">${e.title}</div>
+        <div style="font-size:0.85rem;color:var(--ink-light);font-weight:600">📅 ${formatDate(e.date)}${e.location ? ' · 📍 ' + e.location : ''}</div>
       </div>
-      <p style="font-size:0.82rem;color:var(--ink-light);text-align:center;margin-bottom:16px">We'll let you know if a spot opens up!</p>
-      <button onclick="hideModal()" class="btn btn-primary" style="width:100%;justify-content:center">Got it!</button>
+      <p style="font-size:0.92rem;line-height:1.65;margin-bottom:6px">
+        <strong>${e.title}</strong> is fully booked but you're on the waitlist.
+      </p>
+      <p style="font-size:0.88rem;color:var(--ink-light);line-height:1.65;margin-bottom:20px">
+        If someone drops out — you're next in line. It happens more than you think.
+      </p>
+      <button onclick="hideModal()" class="btn btn-primary" style="width:100%;justify-content:center">Got it, I'm waiting!</button>
     `);
+  }
+
+  function maybeShowReminderBanner() {
+    if (currentRsvpStatus !== 'attending') return;
+    const today = new Date();
+    const eventDate = new Date(currentEvent.date + 'T00:00:00');
+    const diffMs = eventDate - today;
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+    if (diffDays >= 0 && diffDays < 1.5) {
+      const banner = document.createElement('div');
+      banner.style.cssText = 'background:#FFF8E7;border-bottom:2px solid #F5C842;padding:14px max(20px,calc((100vw - 1100px)/2));font-size:0.92rem;font-weight:600;display:flex;gap:12px;align-items:center';
+      const time = currentEvent.time ? ` at ${currentEvent.time}` : '';
+      const community = currentEvent.communities?.name || 'your circle';
+      banner.innerHTML = `
+        <span style="font-size:1.4rem">😄</span>
+        <span>Eh, don't bail on us now! <strong>${currentEvent.title}</strong> is tomorrow${time}. <strong>${community}</strong> is expecting you. Remember — show up and your circle is one day away.</span>`;
+      document.getElementById('page-content').prepend(banner);
+    }
   }
 
   loadEvent();
