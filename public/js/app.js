@@ -116,7 +116,7 @@ function renderCommunityCard(community, userMembership = null) {
 
   const topSection = community.cover_photo
     ? `<a href="/community.html?id=${community.id}" class="c-card-link">
-        <div class="c-card-photo" style="background-image:url('${community.cover_photo}')">
+        <div class="c-card-photo" data-category="${community.category}" style="background-image:url('${community.cover_photo}')">
           <span class="c-card-cat c-card-cat-photo badge-${community.category}">${getCategoryEmoji(community.category)} ${getCategoryLabel(community.category)}</span>
           <div class="c-card-photo-bottom">
             <span class="c-card-photo-name">${community.name}</span>

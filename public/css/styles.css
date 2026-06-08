@@ -220,16 +220,35 @@ p { color: var(--ink-light); font-weight: 400; }
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.65) 100%);
   pointer-events: none;
 }
+/* Per-category bottom gradient */
+.c-card-photo[data-category="active"]::after   { background: linear-gradient(to top, rgba(255,107,107,0.85) 0%, transparent 50%); }
+.c-card-photo[data-category="creative"]::after { background: linear-gradient(to top, rgba(132,94,194,0.85)  0%, transparent 50%); }
+.c-card-photo[data-category="career"]::after   { background: linear-gradient(to top, rgba(0,129,207,0.85)   0%, transparent 50%); }
+.c-card-photo[data-category="wellness"]::after { background: linear-gradient(to top, rgba(0,201,167,0.85)   0%, transparent 50%); }
+.c-card-photo[data-category="social"]::after   { background: linear-gradient(to top, rgba(255,150,113,0.85) 0%, transparent 50%); }
+
 .c-card-cat-photo {
   position: relative;
   z-index: 1;
-  background: rgba(0,0,0,0.45) !important;
   color: white !important;
   align-self: flex-end;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 1px !important;
+  text-transform: uppercase !important;
+  padding: 6px 12px !important;
+  border-radius: 100px !important;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
+/* Per-category badge background */
+.c-card-photo[data-category="active"]   .c-card-cat-photo { background: rgba(255,107,107,0.75) !important; }
+.c-card-photo[data-category="creative"] .c-card-cat-photo { background: rgba(132,94,194,0.75)  !important; }
+.c-card-photo[data-category="career"]   .c-card-cat-photo { background: rgba(0,129,207,0.75)   !important; }
+.c-card-photo[data-category="wellness"] .c-card-cat-photo { background: rgba(0,201,167,0.75)   !important; }
+.c-card-photo[data-category="social"]   .c-card-cat-photo { background: rgba(255,150,113,0.75) !important; }
 .c-card-photo-bottom {
   position: relative;
   z-index: 1;
