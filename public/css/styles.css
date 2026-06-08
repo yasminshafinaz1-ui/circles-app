@@ -268,8 +268,8 @@ p { color: var(--ink-light); font-weight: 400; }
 }
 .c-card-who { font-size: 0.8rem; color: var(--ink-light); font-weight: 600; }
 .c-card-members { font-size: 0.8rem; color: var(--ink-light); font-weight: 600; }
-.c-card-footer { padding: 12px 24px 20px; }
-.c-card-footer .btn { width: 100%; }
+.c-card-footer { padding: 12px 24px 20px; display: flex; gap: 8px; }
+.c-card-footer .btn { flex: 1; text-align: center; }
 
 /* Event Card */
 .e-row {
@@ -714,7 +714,8 @@ p { color: var(--ink-light); font-weight: 400; }
 }
 
 /* ── Tooltip ───────────────────────────────────────────────── */
-.tooltip-wrap { position: relative; display: inline-block; }
+.tooltip-wrap { position: relative; display: inline-block; flex: 1; }
+.tooltip-wrap .btn { width: 100%; }
 .tooltip-text {
   visibility: hidden; opacity: 0;
   background: var(--ink); color: white;
