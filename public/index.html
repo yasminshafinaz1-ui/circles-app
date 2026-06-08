@@ -83,6 +83,41 @@
     .proof-text { font-size: 0.85rem; font-weight: 700; color: var(--ink-light); }
     .proof-text strong { color: var(--ink); }
 
+    /* Floating community name pills */
+    .floating-pills {
+      position: absolute;
+      right: max(20px, calc((100vw - 1200px)/2));
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      z-index: 1;
+    }
+    .f-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: white;
+      border-radius: 100px;
+      padding: 14px 24px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #1A1A2E;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+      animation: pillFloat 4s ease-in-out infinite;
+      white-space: nowrap;
+    }
+    .f-pill:nth-child(2) { animation-delay: 0.6s; }
+    .f-pill:nth-child(3) { animation-delay: 1.2s; }
+    .f-pill:nth-child(4) { animation-delay: 1.8s; }
+    .f-pill:nth-child(5) { animation-delay: 2.4s; }
+    @keyframes pillFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    .f-pill-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
     /* Nav warm tint — landing page only */
     .landing-nav.nav {
       background: linear-gradient(
