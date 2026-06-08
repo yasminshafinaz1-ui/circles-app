@@ -590,34 +590,7 @@
       const communities = (commRes.communities || []).slice(0, 6);
       const grid = document.getElementById('communities-grid');
       if (communities.length) {
-        grid.innerHTML = communities.map(c => {
-          const memberCount = c.member_count || 0;
-          const followerCount = c.follower_count || 0;
-          const countLabel = memberCount > 0
-            ? `👥 ${memberCount} member${memberCount !== 1 ? 's' : ''}`
-            : followerCount > 0 ? `${followerCount} follower${followerCount !== 1 ? 's' : ''}` : '';
-          return `
-            <div class="card community-card" data-category="${c.category}">
-              <a href="/community.html?id=${c.id}" class="c-card-link">
-                <div class="c-card-top ${c.category}-bg">
-                  <span class="c-card-emoji">${c.cover_emoji || '🌟'}</span>
-                  <span class="c-card-cat badge-${c.category}">${getCategoryEmoji(c.category)} ${getCategoryLabel(c.category)}</span>
-                </div>
-                <div class="c-card-body">
-                  <h3>${c.name}</h3>
-                  <p>${c.description || ''}</p>
-                </div>
-                <div class="c-card-meta">
-                  <span class="c-card-who">${c.who_its_for || 'All welcome'}</span>
-                  <span class="c-card-members">${countLabel}</span>
-                </div>
-              </a>
-              <div class="c-card-footer">
-                <a href="/community.html?id=${c.id}" class="btn btn-primary">Follow →</a>
-                <a href="/community.html?id=${c.id}" class="btn btn-secondary btn-sm">View →</a>
-              </div>
-            </div>`;
-        }).join('');
+        grid.innerHTML = communities.map(c => renderCommunityCard(c)).join('');
       } else {
         grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--ink-light)">No communities yet.</p>';
       }
