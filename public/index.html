@@ -27,7 +27,7 @@
     .blob-1 { width: 500px; height: 500px; background: var(--lavender); top: -100px; right: -100px; animation: blobFloat 8s ease-in-out infinite; }
     .blob-2 { width: 350px; height: 350px; background: var(--peach); bottom: 0; left: -80px; animation: blobFloat 10s ease-in-out infinite reverse; }
     .blob-3 { width: 280px; height: 280px; background: var(--mint); top: 40%; right: 25%; animation: blobFloat 12s ease-in-out infinite 2s; }
-    .blob-4 { width: 320px; height: 320px; background: rgb(72, 202, 228); bottom: 20%; left: 5%; animation: blobFloat 11s ease-in-out infinite 1s; }
+    .blob-4 { width: 320px; height: 320px; background: rgba(72, 202, 228, 0.15); opacity: 1; bottom: 20%; left: 5%; animation: blobFloat 11s ease-in-out infinite 1s; }
     @keyframes blobFloat {
       0%, 100% { transform: translate(0,0) scale(1); }
       33% { transform: translate(16px,-20px) scale(1.03); }
@@ -49,7 +49,13 @@
     }
     .hero-badge span { width: 6px; height: 6px; border-radius: 50%; background: var(--wellness); display: block; }
     .hero h1 { margin-bottom: 22px; }
-    .hero h1 em { font-style: italic; color: var(--active); }
+    .hero h1 em {
+      font-style: italic;
+      background: linear-gradient(to right, var(--active), var(--social));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
     .hero-sub { font-size: 1.15rem; line-height: 1.6; color: var(--ink-light); margin-bottom: 36px; max-width: 520px; }
     .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 44px; }
     .hero-proof {
@@ -332,10 +338,10 @@
       <span></span>
       KL & PJ · Vetted communities only
     </div>
-    <h1>Find people you <em>actually</em> click with in KL</h1>
+    <h1>Find people you <em>actually click</em> with in KL</h1>
     <p class="hero-sub">Circles connects you with real, active communities — hiking crews, art clubs, career networks, wellness circles, and more. No spam. No randoms. Just genuine people.</p>
     <div class="hero-actions">
-      <a href="/signup.html" class="btn btn-primary btn-lg">Join Free →</a>
+      <a href="/signup.html" class="btn btn-accent btn-lg">Join Free →</a>
       <a href="/communities.html" class="btn btn-secondary btn-lg">Browse Communities</a>
     </div>
     <div class="hero-proof">
@@ -585,34 +591,7 @@
       const communities = (commRes.communities || []).slice(0, 6);
       const grid = document.getElementById('communities-grid');
       if (communities.length) {
-        grid.innerHTML = communities.map(c => {
-          const memberCount = c.member_count || 0;
-          const followerCount = c.follower_count || 0;
-          const countLabel = memberCount > 0
-            ? `👥 ${memberCount} member${memberCount !== 1 ? 's' : ''}`
-            : followerCount > 0 ? `${followerCount} follower${followerCount !== 1 ? 's' : ''}` : '';
-          return `
-            <div class="card community-card" data-category="${c.category}">
-              <a href="/community.html?id=${c.id}" class="c-card-link">
-                <div class="c-card-top ${c.category}-bg">
-                  <span class="c-card-emoji">${c.cover_emoji || '🌟'}</span>
-                  <span class="c-card-cat badge-${c.category}">${getCategoryEmoji(c.category)} ${getCategoryLabel(c.category)}</span>
-                </div>
-                <div class="c-card-body">
-                  <h3>${c.name}</h3>
-                  <p>${c.description || ''}</p>
-                </div>
-                <div class="c-card-meta">
-                  <span class="c-card-who">${c.who_its_for || 'All welcome'}</span>
-                  <span class="c-card-members">${countLabel}</span>
-                </div>
-              </a>
-              <div class="c-card-footer">
-                <a href="/community.html?id=${c.id}" class="btn btn-primary">Follow →</a>
-                <a href="/community.html?id=${c.id}" class="btn btn-secondary btn-sm">View →</a>
-              </div>
-            </div>`;
-        }).join('');
+        grid.innerHTML = communities.map(c => renderCommunityCard(c, null)).join('');
       } else {
         grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--ink-light)">No communities yet.</p>';
       }
